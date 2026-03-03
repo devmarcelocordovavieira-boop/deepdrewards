@@ -26,5 +26,4 @@ Este projeto foi desenvolvido como uma Single Page Application (SPA) em React co
 ## 3. Estrutura do Projeto
 
 - `src/App.tsx`: Interface Frontend (SPA) construída com React e Tailwind CSS.
-- `public/_redirects`: Arquivo de configuração para o Cloudflare Pages rotear todas as requisições para o `index.html` (necessário para SPAs).
 - `supabase.sql`: Script de modelagem do banco de dados relacional.
