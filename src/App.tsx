@@ -46,6 +46,7 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
 
   const showNotification = (msg: string, type: 'success'|'error') => {
     setNotification({ msg, type });
@@ -53,6 +54,13 @@ export default function App() {
   };
 
   React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get('invite');
+    if (invite) {
+      setInviteCode(invite);
+      setAuthMode('register');
+    }
+
     checkUser();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -168,6 +176,14 @@ export default function App() {
           if (profileError) throw profileError;
         }
         showNotification('Conta criada com sucesso!', 'success');
+        
+        // Clear invite from URL
+        if (inviteCode) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('invite');
+          window.history.replaceState({}, '', url.toString());
+          setInviteCode(null);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: authEmail,
@@ -491,6 +507,42 @@ export default function App() {
     }
   };
 
+  const handlePenalizar = async (userId: string) => {
+    const pontosStr = window.prompt('Quantos pontos deseja remover deste usuário?');
+    if (!pontosStr) return;
+    const pontos = parseInt(pontosStr, 10);
+    if (isNaN(pontos) || pontos <= 0) return showNotification('Valor inválido.', 'error');
+
+    const motivo = window.prompt('Motivo da penalização (opcional):');
+    if (motivo === null) return; // Cancelled
+
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      const newPontos = Math.max(0, (user.pontos || 0) - pontos);
+      const newAcumulados = Math.max(0, (user.pontos_acumulados || 0) - pontos);
+
+      const { error } = await supabase.from('usuarios').update({
+        pontos: newPontos,
+        pontos_acumulados: newAcumulados
+      }).eq('id', userId);
+
+      if (error) throw error;
+
+      showNotification(`Usuário penalizado em ${pontos} pontos.`, 'success');
+      fetchAllData();
+    } catch (error: any) {
+      showNotification(`Erro ao penalizar: ${error.message}`, 'error');
+    }
+  };
+
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}?invite=deeprewards2024`;
+    navigator.clipboard.writeText(link);
+    showNotification('Link de convite copiado!', 'success');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F4F4F5] flex items-center justify-center">
@@ -588,61 +640,71 @@ export default function App() {
             </p>
             
             <form onSubmit={handleAuth} className="w-full max-w-sm bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 space-y-5">
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">Nome Completo</label>
-                  <input 
-                    type="text" 
-                    value={authName}
-                    onChange={e => setAuthName(e.target.value)}
-                    className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
-                    placeholder="Ex: João Silva"
-                  />
+              {authMode === 'register' && !inviteCode ? (
+                <div className="text-center p-6 bg-red-50 text-red-600 rounded-2xl font-bold border border-red-100">
+                  O cadastro é permitido apenas por convite. Peça o link para um administrador.
                 </div>
+              ) : (
+                <>
+                  {authMode === 'register' && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">Nome Completo</label>
+                      <input 
+                        type="text" 
+                        value={authName}
+                        onChange={e => setAuthName(e.target.value)}
+                        className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
+                        placeholder="Ex: João Silva"
+                      />
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">E-mail</label>
+                    <input 
+                      type="email" 
+                      value={authEmail}
+                      onChange={e => setAuthEmail(e.target.value)}
+                      className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">Senha</label>
+                    <input 
+                      type="password" 
+                      value={authPassword}
+                      onChange={e => setAuthPassword(e.target.value)}
+                      className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button 
+                    type="submit"
+                    className="w-full py-4 mt-2 bg-[#8B4513] text-white rounded-2xl font-bold text-lg hover:bg-[#6B3410] transition-all shadow-lg shadow-[#8B4513]/20 active:scale-[0.98]"
+                  >
+                    {authMode === 'login' ? 'Entrar' : 'Criar Conta'}
+                  </button>
+                </>
               )}
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">E-mail</label>
-                <input 
-                  type="email" 
-                  value={authEmail}
-                  onChange={e => setAuthEmail(e.target.value)}
-                  className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
-                  placeholder="seu@email.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">Senha</label>
-                <input 
-                  type="password" 
-                  value={authPassword}
-                  onChange={e => setAuthPassword(e.target.value)}
-                  className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button 
-                type="submit"
-                className="w-full py-4 mt-2 bg-[#8B4513] text-white rounded-2xl font-bold text-lg hover:bg-[#6B3410] transition-all shadow-lg shadow-[#8B4513]/20 active:scale-[0.98]"
-              >
-                {authMode === 'login' ? 'Entrar' : 'Criar Conta'}
-              </button>
 
               <div className="text-center mt-6">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setAuthMode(authMode === 'login' ? 'register' : 'login');
-                    setAuthEmail('');
-                    setAuthPassword('');
-                    setAuthName('');
-                  }}
-                  className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
-                >
-                  {authMode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Faça login'}
-                </button>
+                {authMode === 'login' && !inviteCode ? null : (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setAuthMode(authMode === 'login' ? 'register' : 'login');
+                      setAuthEmail('');
+                      setAuthPassword('');
+                      setAuthName('');
+                    }}
+                    className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
+                  >
+                    {authMode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Faça login'}
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -823,7 +885,7 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-3">Envie a foto da prova</label>
+                    <label className="block text-sm font-bold text-gray-900 mb-3">Envie a foto ou vídeo da prova</label>
                     <div className="relative border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50 p-8 text-center cursor-pointer hover:bg-gray-100 transition-colors min-h-[200px] flex flex-col items-center justify-center overflow-hidden group">
                       <input 
                         type="file"
@@ -840,7 +902,7 @@ export default function App() {
                             <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                           )}
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="bg-white text-gray-900 font-bold px-5 py-2.5 rounded-full text-sm shadow-lg">Trocar foto</span>
+                            <span className="bg-white text-gray-900 font-bold px-5 py-2.5 rounded-full text-sm shadow-lg">Trocar arquivo</span>
                           </div>
                         </div>
                       ) : (
@@ -850,7 +912,7 @@ export default function App() {
                           </div>
                           <div>
                             <span className="block font-bold text-gray-700">Toque para abrir a galeria</span>
-                            <span className="block text-gray-400 text-xs mt-1 font-medium">JPG, PNG ou MP4</span>
+                            <span className="block text-gray-400 text-xs mt-1 font-medium">JPG, PNG, MP4 ou WEBM</span>
                           </div>
                         </div>
                       )}
@@ -918,9 +980,18 @@ export default function App() {
         {/* ADMIN TAB */}
         {activeTab === 'admin' && currentUser?.cargo === 'admin' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div className="mb-8">
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Painel de administração</h1>
-              <p className="text-gray-500 mt-2 font-medium">Aprove missões e gerencie o catálogo.</p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Painel de administração</h1>
+                <p className="text-gray-500 mt-2 font-medium">Aprove missões e gerencie o catálogo.</p>
+              </div>
+              <button 
+                onClick={copyInviteLink}
+                className="px-5 py-3 bg-[#8B4513] text-white rounded-xl font-bold hover:bg-[#6B3410] transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Copiar Link de Convite
+              </button>
             </div>
 
             {/* FILA DE APROVAÇÃO */}
@@ -948,7 +1019,7 @@ export default function App() {
                         </div>
                         
                         <div className="w-full md:w-36 h-36 bg-gray-100 rounded-2xl border border-gray-200 relative flex-shrink-0 group overflow-hidden">
-                          {sub.url_prova.match(/\.(mp4|webm|ogg)$/i) ? (
+                          {sub.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
                             <video src={sub.url_prova} className="w-full h-full object-cover" controls />
                           ) : (
                             <img src={sub.url_prova} alt="Evidência" className="w-full h-full object-cover" />
@@ -1181,12 +1252,16 @@ export default function App() {
                     <div>
                       <div className="flex items-center gap-3">
                         {newProdutoPreview && (
-                          <img src={newProdutoPreview} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-gray-200 flex-shrink-0" />
+                          newProdutoFile?.type.startsWith('video/') ? (
+                            <video src={newProdutoPreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200 flex-shrink-0" controls />
+                          ) : (
+                            <img src={newProdutoPreview} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-gray-200 flex-shrink-0" />
+                          )
                         )}
                         <div className="flex-1">
                           <input 
                             type="file" 
-                            accept="image/*"
+                            accept="image/*,video/*"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
@@ -1289,6 +1364,46 @@ export default function App() {
                     ))}
                   </div>
                 )}
+              </div>
+            </section>
+
+            {/* GERENCIAMENTO DE USUÁRIOS (PENALIZAÇÕES) */}
+            <section className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mt-8">
+              <div className="p-6 border-b border-gray-50 bg-white">
+                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-[#8B4513]" /> Gerenciar Usuários
+                </h2>
+              </div>
+              
+              <div className="p-2">
+                <div className="space-y-2">
+                  {users.filter(u => u.cargo !== 'admin').map(user => (
+                    <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 gap-4">
+                      <div className="flex items-center gap-3">
+                        <img src={user.avatar} alt={user.nome} className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 object-cover" />
+                        <div>
+                          <p className="font-bold text-gray-900">{user.nome}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-[#8B4513]">{user.pontos} pts atuais</p>
+                          <p className="text-xs text-gray-500">{user.pontos_acumulados} pts total</p>
+                        </div>
+                        <button 
+                          onClick={() => handlePenalizar(user.id)}
+                          className="px-4 py-2 bg-[#FEF2F2] text-[#991B1B] hover:bg-[#FEE2E2] rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 ml-auto sm:ml-0"
+                        >
+                          <AlertCircle className="w-4 h-4" /> Penalizar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {users.filter(u => u.cargo !== 'admin').length === 0 && (
+                    <div className="p-8 text-center text-gray-500 font-medium">Nenhum usuário comum encontrado.</div>
+                  )}
+                </div>
               </div>
             </section>
           </div>
