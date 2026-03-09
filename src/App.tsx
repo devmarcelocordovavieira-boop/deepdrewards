@@ -174,6 +174,9 @@ export default function App() {
             { id: authData.user.id, nome: authName, email: authEmail }
           ]);
           if (profileError) throw profileError;
+          
+          // Log the user in automatically after profile creation
+          await fetchUserData(authData.user.id);
         }
         showNotification('Conta criada com sucesso!', 'success');
         
@@ -551,6 +554,130 @@ export default function App() {
     );
   }
 
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex bg-white text-[#18181B] font-sans">
+        
+        {/* Left Side - Form */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative z-10 bg-white">
+          
+          {/* NOTIFICATION */}
+          {notification && (
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg border ${
+                notification.type === 'success' ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]' : 'bg-[#FEF2F2] border-[#FECACA] text-[#991B1B]'
+              }`}>
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <p className="text-sm font-bold">{notification.msg}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="max-w-md w-full mx-auto animate-in fade-in slide-in-from-left-8 duration-700">
+            <div className="flex items-center gap-3 mb-12">
+              <div className="w-12 h-12 bg-[#8B4513] rounded-xl rotate-12 flex items-center justify-center shadow-lg shadow-[#8B4513]/20">
+                <Bird className="w-6 h-6 text-white -rotate-12" />
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">
+                Deep Rewards
+              </h1>
+            </div>
+
+            <div className="mb-10">
+              <h2 className="text-4xl font-black text-gray-900 mb-3 tracking-tight">
+                {authMode === 'login' ? 'Bem-vindo de volta' : 'Junte-se ao time'}
+              </h2>
+              <p className="text-gray-500 font-medium text-lg">
+                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.'}
+              </p>
+            </div>
+            
+            <form onSubmit={handleAuth} className="space-y-5">
+              {authMode === 'register' && !inviteCode ? (
+                <div className="p-6 bg-red-50 text-red-600 rounded-2xl font-bold border border-red-100 flex items-start gap-3">
+                  <Shield className="w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <p>O cadastro é restrito. Você precisa de um link de convite oficial da sua empresa para criar uma conta.</p>
+                </div>
+              ) : (
+                <>
+                  {authMode === 'register' && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">Nome Completo</label>
+                      <input 
+                        type="text" 
+                        value={authName}
+                        onChange={e => setAuthName(e.target.value)}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all placeholder-gray-400"
+                        placeholder="Ex: João Silva"
+                      />
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">E-mail Corporativo</label>
+                    <input 
+                      type="email" 
+                      value={authEmail}
+                      onChange={e => setAuthEmail(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all placeholder-gray-400"
+                      placeholder="voce@empresa.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">Senha</label>
+                    <input 
+                      type="password" 
+                      value={authPassword}
+                      onChange={e => setAuthPassword(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all placeholder-gray-400"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button 
+                    type="submit"
+                    className="w-full py-4 mt-4 bg-[#8B4513] text-white rounded-2xl font-bold text-lg hover:bg-[#6B3410] transition-all shadow-lg shadow-[#8B4513]/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
+                  >
+                    {authMode === 'login' ? 'Entrar na Plataforma' : 'Criar Minha Conta'}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </>
+              )}
+
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                {authMode === 'login' && !inviteCode ? null : (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setAuthMode(authMode === 'login' ? 'register' : 'login');
+                      setAuthEmail('');
+                      setAuthPassword('');
+                      setAuthName('');
+                    }}
+                    className="text-sm font-bold text-gray-500 hover:text-[#8B4513] transition-colors flex items-center gap-2"
+                  >
+                    {authMode === 'login' ? 'Possui um convite? Cadastre-se' : 'Já tem uma conta? Faça login'}
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Side - Image/Gamification Vibe */}
+        <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-[#F4F4F5]">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#8B4513]/90 to-[#A0522D]/90 mix-blend-multiply z-10"></div>
+          <img 
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop" 
+            alt="Equipe colaborando" 
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F4F5] text-[#18181B] font-sans pb-24 md:pb-0 relative">
       {/* Subtle background texture */}
@@ -559,26 +686,19 @@ export default function App() {
       {/* HEADER (MOBILE & DESKTOP) */}
       <header className="bg-white sticky top-0 z-40 shadow-sm px-4 py-3 md:px-8 md:py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          {currentUser ? (
-            <div className="flex items-center gap-3">
-              <div className="relative group cursor-pointer">
-                <img src={currentUser.avatar} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-200 object-cover" />
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                  <Camera className="w-4 h-4 text-white" />
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                </label>
-              </div>
-              <div className="hidden md:block">
-                <p className="text-xs text-gray-500 font-medium">Olá,</p>
-                <p className="text-sm font-bold">{currentUser.nome}</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="relative group cursor-pointer">
+              <img src={currentUser.avatar} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-200 object-cover" />
+              <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                <Camera className="w-4 h-4 text-white" />
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
             </div>
-          ) : (
-            <div className="flex items-center gap-2 text-[#8B4513] font-black text-xl tracking-tight">
-              <Bird className="w-6 h-6 fill-[#D4AF37]" />
-              DEEP REWARDS
+            <div className="hidden md:block">
+              <p className="text-xs text-gray-500 font-medium">Olá,</p>
+              <p className="text-sm font-bold">{currentUser.nome}</p>
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
@@ -592,25 +712,11 @@ export default function App() {
             )}
           </div>
 
-          {currentUser ? (
-            <div className="flex items-center gap-3">
-              <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full">
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => {
-                  setAuthMode('login');
-                  setCurrentUser(null);
-                }}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-200 transition-colors"
-              >
-                Entrar
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -629,87 +735,6 @@ export default function App() {
       {/* MAIN CONTENT */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         
-        {!currentUser ? (
-          <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-[#8B4513] rounded-3xl rotate-12 flex items-center justify-center mb-8 shadow-xl shadow-[#8B4513]/30">
-              <Bird className="w-10 h-10 text-white -rotate-12" />
-            </div>
-            <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight text-center">Deep Rewards</h1>
-            <p className="text-gray-500 mb-10 text-center font-medium max-w-xs">
-              {authMode === 'login' ? 'Faça login para acessar suas missões e prêmios.' : 'Crie sua conta e comece a ganhar pontos hoje mesmo.'}
-            </p>
-            
-            <form onSubmit={handleAuth} className="w-full max-w-sm bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 space-y-5">
-              {authMode === 'register' && !inviteCode ? (
-                <div className="text-center p-6 bg-red-50 text-red-600 rounded-2xl font-bold border border-red-100">
-                  O cadastro é permitido apenas por convite. Peça o link para um administrador.
-                </div>
-              ) : (
-                <>
-                  {authMode === 'register' && (
-                    <div>
-                      <label className="block text-sm font-bold text-gray-900 mb-2">Nome Completo</label>
-                      <input 
-                        type="text" 
-                        value={authName}
-                        onChange={e => setAuthName(e.target.value)}
-                        className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
-                        placeholder="Ex: João Silva"
-                      />
-                    </div>
-                  )}
-                  
-                  <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">E-mail</label>
-                    <input 
-                      type="email" 
-                      value={authEmail}
-                      onChange={e => setAuthEmail(e.target.value)}
-                      className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
-                      placeholder="seu@email.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">Senha</label>
-                    <input 
-                      type="password" 
-                      value={authPassword}
-                      onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-gray-50 border-none rounded-xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors"
-                      placeholder="••••••••"
-                    />
-                  </div>
-
-                  <button 
-                    type="submit"
-                    className="w-full py-4 mt-2 bg-[#8B4513] text-white rounded-2xl font-bold text-lg hover:bg-[#6B3410] transition-all shadow-lg shadow-[#8B4513]/20 active:scale-[0.98]"
-                  >
-                    {authMode === 'login' ? 'Entrar' : 'Criar Conta'}
-                  </button>
-                </>
-              )}
-
-              <div className="text-center mt-6">
-                {authMode === 'login' && !inviteCode ? null : (
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setAuthMode(authMode === 'login' ? 'register' : 'login');
-                      setAuthEmail('');
-                      setAuthPassword('');
-                      setAuthName('');
-                    }}
-                    className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
-                  >
-                    {authMode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Faça login'}
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        ) : (
-          <>
             {/* RECOMPENSAS TAB (LOJA) */}
             {activeTab === 'recompensas' && (
           <div className="space-y-8 animate-in fade-in duration-300">
@@ -1407,8 +1432,6 @@ export default function App() {
               </div>
             </section>
           </div>
-        )}
-        </>
         )}
       </main>
 
