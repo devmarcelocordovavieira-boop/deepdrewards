@@ -600,10 +600,12 @@ export default function App() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex bg-[#0A0A0A] text-white font-sans">
+      <div className="min-h-screen flex bg-[#050505] text-white font-sans relative overflow-hidden">
+        {/* GLOBAL GRID BACKGROUND */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#00f0ff0a_1px,transparent_1px),linear-gradient(to_bottom,#00f0ff0a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0"></div>
         
         {/* Left Side - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative z-10 bg-[#0A0A0A]">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative z-10 bg-[#050505]/80 backdrop-blur-sm">
           
           {/* NOTIFICATION */}
           {notification && (
@@ -724,12 +726,12 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white font-sans flex relative">
-      {/* Subtle background texture */}
-      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#00F0FF 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+    <div className="min-h-screen bg-[#050505] text-white font-sans flex relative overflow-hidden">
+      {/* GLOBAL GRID BACKGROUND */}
+      <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#00f0ff08_1px,transparent_1px),linear-gradient(to_bottom,#00f0ff08_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
       
       {/* SIDEBAR (DESKTOP) */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#121212] border-r border-white/5 z-40 sticky top-0 h-screen">
+      <aside className="hidden md:flex flex-col w-64 bg-[#0A0A0A]/80 backdrop-blur-xl border-r border-white/10 z-40 sticky top-0 h-screen shadow-[4px_0_24px_rgba(0,163,255,0.05)]">
         <div className="p-6 flex items-center gap-3 mb-6">
           <div className="w-12 h-12 flex items-center justify-center">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
@@ -776,7 +778,7 @@ export default function App() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         {/* MOBILE HEADER */}
-        <header className="md:hidden bg-[#121212] border-b border-white/5 sticky top-0 z-40 px-4 py-3 flex justify-between items-center">
+        <header className="md:hidden bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-[0_4px_24px_rgba(0,163,255,0.05)]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center">
               <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
@@ -1222,12 +1224,14 @@ export default function App() {
           <div className="space-y-8 animate-in fade-in duration-300">
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-black text-white tracking-tight">Painel de administração</h1>
+                <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                  <Shield className="w-8 h-8 text-[#00A3FF]" /> Painel de Comando
+                </h1>
                 <p className="text-gray-400 mt-2 font-medium">Aprove missões e gerencie o catálogo.</p>
               </div>
               <button 
                 onClick={copyInviteLink}
-                className="px-5 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#0077CC] transition-colors shadow-md flex items-center justify-center gap-2"
+                className="px-5 py-3 bg-gradient-to-r from-[#00A3FF] to-[#0077CC] text-white rounded-xl font-bold hover:from-[#00F0FF] hover:to-[#00A3FF] transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)] hover:shadow-[0_0_25px_rgba(0,240,255,0.6)] flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                 Copiar Link de Convite
@@ -1235,27 +1239,31 @@ export default function App() {
             </div>
 
             {/* FILA DE APROVAÇÃO */}
-            <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden mb-8">
-              <div className="p-6 border-b border-white/5 bg-[#121212]">
+            <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] overflow-hidden mb-8 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#00A3FF]/10 blur-[50px] pointer-events-none"></div>
+              <div className="p-6 border-b border-white/10 bg-transparent relative z-10">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-[#00A3FF]" /> Fila de Avaliação
+                  <Camera className="w-5 h-5 text-[#00F0FF]" /> Fila de Avaliação
                 </h2>
               </div>
               
-              <div className="p-2">
+              <div className="p-4 relative z-10">
                 {submissoes.filter(s => s.status === 'pendente').length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhuma missão pendente. Tudo limpo! ✨</div>
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4">
+                    <CheckCircle2 className="w-12 h-12 text-[#00A3FF]/30" />
+                    Nenhuma missão pendente. Tudo limpo! ✨
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {submissoes.filter(s => s.status === 'pendente').map(sub => (
-                      <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212] hover:bg-white/5 rounded-2xl transition-colors border border-transparent hover:border-white/10">
+                      <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]">
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white text-lg">{sub.usuario_nome}</span>
-                            <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30">+{sub.pontos} pts</span>
+                            <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">+{sub.pontos} pts</span>
                           </div>
                           <div className="text-sm font-bold text-gray-300">{sub.tarefa_nome}</div>
-                          <p className="text-sm text-gray-400 bg-[#0A0A0A] p-3 rounded-xl border border-white/5">{sub.descricao}</p>
+                          <p className="text-sm text-gray-400 bg-[#050505] p-3 rounded-xl border border-white/5">{sub.descricao}</p>
                         </div>
                         
                         <div className="w-full md:w-36 h-36 bg-[#0A0A0A] rounded-2xl border border-white/10 relative flex-shrink-0 group overflow-hidden">
@@ -1293,9 +1301,10 @@ export default function App() {
             {/* GERENCIAMENTO DE CATÁLOGO E MISSÕES */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* GERENCIAR MISSÕES */}
-              <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 p-6 flex flex-col h-[600px]">
-                <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0">
-                  <Cpu className="w-5 h-5 text-[#00A3FF]" /> Gerenciar Missões
+              <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 p-6 flex flex-col h-[600px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#00A3FF]/10 blur-[40px] pointer-events-none"></div>
+                <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0 relative z-10">
+                  <Cpu className="w-5 h-5 text-[#00F0FF]" /> Gerenciar Missões
                 </h2>
                 
                 {/* Lista de Missões Existentes */}
@@ -1304,12 +1313,12 @@ export default function App() {
                     <p className="text-sm text-gray-500 text-center py-4">Nenhuma missão cadastrada.</p>
                   ) : (
                     tarefas.map(tarefa => (
-                      <div key={tarefa.id} className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-xl border border-white/5">
+                      <div key={tarefa.id} className="flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]">
                         <div>
                           <p className="font-bold text-white text-sm">{tarefa.nome}</p>
                           <p className="text-xs text-[#00F0FF] font-bold">{tarefa.pontos} pts</p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => {
                               setEditingTarefa(tarefa);
@@ -1374,9 +1383,10 @@ export default function App() {
               </section>
 
               {/* GERENCIAR PRÊMIOS */}
-              <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 p-6 flex flex-col h-[600px]">
-                <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0">
-                  <Gift className="w-5 h-5 text-[#00A3FF]" /> Gerenciar Prêmios
+              <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 p-6 flex flex-col h-[600px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#00A3FF]/10 blur-[40px] pointer-events-none"></div>
+                <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0 relative z-10">
+                  <Gift className="w-5 h-5 text-[#00F0FF]" /> Gerenciar Prêmios
                 </h2>
                 
                 {/* Lista de Prêmios Existentes */}
@@ -1414,19 +1424,19 @@ export default function App() {
                             handleReorderProdutos(draggedProdutoId, produto.id);
                           }
                         }}
-                        className={`flex items-center justify-between p-3 bg-[#0A0A0A] rounded-xl border border-white/5 transition-all ${draggedProdutoId === produto.id ? 'opacity-50' : ''}`}
+                        className={`flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] ${draggedProdutoId === produto.id ? 'opacity-50' : ''}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-gray-300">
+                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors">
                             <GripVertical className="w-5 h-5" />
                           </div>
-                          <img src={produto.imagem_url} alt={produto.nome} className="w-10 h-10 rounded-lg object-cover bg-[#121212] border border-white/10" />
+                          <img src={produto.imagem_url} alt={produto.nome} className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
                           <div>
                             <p className="font-bold text-white text-sm">{produto.nome}</p>
                             <p className="text-xs text-[#00F0FF] font-bold">{produto.preco_pontos} pts • {produto.estoque} em estoque</p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => {
                               setEditingProduto(produto);
@@ -1564,20 +1574,24 @@ export default function App() {
             </div>
 
             {/* GERENCIAMENTO DE RESGATES */}
-            <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden mt-8">
-              <div className="p-6 border-b border-white/5 bg-[#121212]">
+            <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] overflow-hidden mt-8 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#00A3FF]/10 blur-[50px] pointer-events-none"></div>
+              <div className="p-6 border-b border-white/10 bg-transparent relative z-10">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Ticket className="w-5 h-5 text-[#00A3FF]" /> Histórico de Resgates
+                  <Ticket className="w-5 h-5 text-[#00F0FF]" /> Histórico de Resgates
                 </h2>
               </div>
               
-              <div className="p-2">
+              <div className="p-4 relative z-10">
                 {resgates.length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum resgate realizado ainda.</div>
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4">
+                    <Ticket className="w-12 h-12 text-[#00A3FF]/30" />
+                    Nenhum resgate realizado ainda.
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {resgates.map(resgate => (
-                      <div key={resgate.id} className={`p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center rounded-2xl transition-colors border ${resgate.usado ? 'bg-[#0A0A0A] border-white/5 opacity-75' : 'bg-[#121212] border-transparent hover:border-white/10 hover:bg-white/5'}`}>
+                      <div key={resgate.id} className={`p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center rounded-2xl transition-all border ${resgate.usado ? 'bg-[#050505] border-white/5 opacity-75' : 'bg-[#121212]/80 border-white/5 hover:border-[#00A3FF]/30 hover:bg-white/5 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]'}`}>
                         <div className="space-y-1 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white text-lg">{resgate.usuario_nome}</span>
@@ -1608,17 +1622,18 @@ export default function App() {
             </section>
 
             {/* GERENCIAMENTO DE USUÁRIOS (PENALIZAÇÕES) */}
-            <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden mt-8">
-              <div className="p-6 border-b border-white/5 bg-[#121212]">
+            <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] overflow-hidden mt-8 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#00A3FF]/10 blur-[50px] pointer-events-none"></div>
+              <div className="p-6 border-b border-white/10 bg-transparent relative z-10">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#00A3FF]" /> Gerenciar Usuários
+                  <Shield className="w-5 h-5 text-[#00F0FF]" /> Gerenciar Usuários
                 </h2>
               </div>
               
-              <div className="p-2">
-                <div className="space-y-2">
+              <div className="p-4 relative z-10">
+                <div className="space-y-3">
                   {users.filter(u => u.cargo !== 'admin').map(user => (
-                    <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212] hover:bg-white/5 rounded-2xl transition-colors border border-transparent hover:border-white/10 gap-4">
+                    <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] gap-4">
                       <div className="flex items-center gap-3">
                         <img src={user.avatar} alt={user.nome} className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover" />
                         <div>
