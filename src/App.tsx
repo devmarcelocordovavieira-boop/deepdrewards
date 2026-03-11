@@ -20,6 +20,7 @@ export default function App() {
   const [products, setProducts] = useState<any[]>([]);
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [submissoes, setSubmissoes] = useState<any[]>([]);
+  const [penalizacoes, setPenalizacoes] = useState<any[]>([]);
   const [notification, setNotification] = useState<{msg: string, type: 'success'|'error'} | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -190,6 +191,10 @@ export default function App() {
       }));
       setResgates(mappedResgates);
     }
+
+    // Fetch penalizacoes
+    const { data: penalizacoesData } = await supabase.from('penalizacoes').select('*').eq('lida', false);
+    if (penalizacoesData) setPenalizacoes(penalizacoesData);
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -577,10 +582,41 @@ export default function App() {
 
       if (error) throw error;
 
+      // Register penalty notification
+      await supabase.from('penalizacoes').insert([{
+        usuario_id: userId,
+        pontos: pontos,
+        motivo: motivo || 'Sem motivo especificado'
+      }]);
+
       showNotification(`Usuário penalizado em ${pontos} pontos.`, 'success');
       fetchAllData();
     } catch (error: any) {
       showNotification(`Erro ao penalizar: ${error.message}`, 'error');
+    }
+  };
+
+  const handleRemoverUsuario = async (userId: string) => {
+    const confirm = window.confirm('Tem certeza absoluta que deseja remover este usuário? Esta ação não pode ser desfeita e removerá todo o histórico dele.');
+    if (!confirm) return;
+
+    try {
+      const { error } = await supabase.from('usuarios').delete().eq('id', userId);
+      if (error) throw error;
+      
+      showNotification('Usuário removido com sucesso.', 'success');
+      fetchAllData();
+    } catch (error: any) {
+      showNotification(`Erro ao remover usuário: ${error.message}`, 'error');
+    }
+  };
+
+  const handleClosePenalizacao = async (penalizacaoId: string) => {
+    try {
+      await supabase.from('penalizacoes').update({ lida: true }).eq('id', penalizacaoId);
+      setPenalizacoes(prev => prev.filter(p => p.id !== penalizacaoId));
+    } catch (error) {
+      console.error('Erro ao fechar notificação de penalização', error);
     }
   };
 
@@ -808,6 +844,32 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* PENALIZAÇÕES NOTIFICATIONS */}
+        {penalizacoes.filter(p => p.usuario_id === currentUser.id).map(penalizacao => (
+          <div key={penalizacao.id} className="fixed top-20 right-4 z-40 w-[90%] md:w-auto max-w-md animate-in slide-in-from-right-8 fade-in duration-500">
+            <div className="flex items-start gap-4 p-5 rounded-2xl shadow-[0_10px_40px_rgba(255,0,0,0.2)] border border-red-500/30 bg-[#121212]/95 backdrop-blur-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-red-500 shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
+              <div className="p-2 bg-red-500/10 rounded-xl text-red-500 shrink-0">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-400 font-black text-lg mb-1">Penalidade Aplicada</h3>
+                <p className="text-white text-sm font-medium mb-2">Você perdeu <span className="text-red-400 font-bold">{penalizacao.pontos} pontos</span>.</p>
+                <div className="bg-[#050505] border border-white/5 rounded-lg p-3 mb-3">
+                  <p className="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">Motivo:</p>
+                  <p className="text-gray-200 text-sm italic">"{penalizacao.motivo}"</p>
+                </div>
+                <button 
+                  onClick={() => handleClosePenalizacao(penalizacao.id)}
+                  className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm font-bold transition-colors border border-red-500/20"
+                >
+                  Estou ciente
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
 
         {/* SCROLLABLE CONTENT */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
@@ -1646,12 +1708,22 @@ export default function App() {
                           <p className="text-sm font-bold text-[#00F0FF]">{user.pontos} pts atuais</p>
                           <p className="text-xs text-gray-500">{user.pontos_acumulados} pts total</p>
                         </div>
-                        <button 
-                          onClick={() => handlePenalizar(user.id)}
-                          className="px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20 ml-auto sm:ml-0"
-                        >
-                          <AlertCircle className="w-4 h-4" /> Penalizar
-                        </button>
+                        <div className="flex gap-2 ml-auto sm:ml-0">
+                          <button 
+                            onClick={() => handlePenalizar(user.id)}
+                            className="px-4 py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-orange-500/20"
+                            title="Remover pontos"
+                          >
+                            <AlertCircle className="w-4 h-4" /> Penalizar
+                          </button>
+                          <button 
+                            onClick={() => handleRemoverUsuario(user.id)}
+                            className="px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20"
+                            title="Excluir usuário"
+                          >
+                            <XCircle className="w-4 h-4" /> Remover
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
