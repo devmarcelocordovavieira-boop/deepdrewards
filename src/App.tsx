@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
-  Bird, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock
+  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -258,7 +258,7 @@ export default function App() {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#D4AF37', '#8B4513', '#FFFFFF']
+        colors: ['#00F0FF', '#00A3FF', '#FFFFFF']
       });
       
       showNotification(`Eba! ${produto.nome} resgatado com sucesso!`, 'success');
@@ -592,18 +592,18 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F4F4F5] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B4513]"></div>
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A3FF]"></div>
       </div>
     );
   }
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex bg-white text-[#18181B] font-sans">
+      <div className="min-h-screen flex bg-[#0A0A0A] text-white font-sans">
         
         {/* Left Side - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative z-10 bg-white">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative z-10 bg-[#0A0A0A]">
           
           {/* NOTIFICATION */}
           {notification && (
@@ -619,26 +619,27 @@ export default function App() {
 
           <div className="max-w-md w-full mx-auto animate-in fade-in slide-in-from-left-8 duration-700">
             <div className="flex items-center gap-3 mb-12">
-              <div className="w-12 h-12 bg-[#8B4513] rounded-xl rotate-12 flex items-center justify-center shadow-lg shadow-[#8B4513]/20">
-                <Bird className="w-6 h-6 text-white -rotate-12" />
+              <div className="w-16 h-16 flex items-center justify-center">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,229,255,0.5)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+                <Cpu className="w-8 h-8 text-[#00A3FF] hidden" />
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">
+              <h1 className="text-2xl font-black tracking-tight text-white uppercase">
                 Deep Rewards
               </h1>
             </div>
 
             <div className="mb-10">
-              <h2 className="text-4xl font-black text-gray-900 mb-3 tracking-tight">
+              <h2 className="text-4xl font-black text-white mb-3 tracking-tight">
                 {authMode === 'login' ? 'Bem-vindo de volta' : 'Junte-se ao time'}
               </h2>
-              <p className="text-gray-500 font-medium text-lg">
+              <p className="text-gray-400 font-medium text-lg">
                 {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.'}
               </p>
             </div>
             
             <form onSubmit={handleAuth} className="space-y-5">
               {authMode === 'register' && !inviteCode ? (
-                <div className="p-6 bg-red-50 text-red-600 rounded-2xl font-bold border border-red-100 flex items-start gap-3">
+                <div className="p-6 bg-red-500/10 text-red-400 rounded-2xl font-bold border border-red-500/20 flex items-start gap-3">
                   <Shield className="w-6 h-6 flex-shrink-0 mt-0.5" />
                   <p>O cadastro é restrito. Você precisa de um link de convite oficial da sua empresa para criar uma conta.</p>
                 </div>
@@ -646,42 +647,42 @@ export default function App() {
                 <>
                   {authMode === 'register' && (
                     <div>
-                      <label className="block text-sm font-bold text-gray-900 mb-2">Nome Completo</label>
+                      <label className="block text-sm font-bold text-gray-300 mb-2">Nome Completo</label>
                       <input 
                         type="text" 
                         value={authName}
                         onChange={e => setAuthName(e.target.value)}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all placeholder-gray-400"
+                        className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
                         placeholder="Ex: João Silva"
                       />
                     </div>
                   )}
                   
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">E-mail Corporativo</label>
+                    <label className="block text-sm font-bold text-gray-300 mb-2">E-mail Corporativo</label>
                     <input 
                       type="email" 
                       value={authEmail}
                       onChange={e => setAuthEmail(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all placeholder-gray-400"
+                      className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
                       placeholder="voce@empresa.com"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">Senha</label>
+                    <label className="block text-sm font-bold text-gray-300 mb-2">Senha</label>
                     <input 
                       type="password" 
                       value={authPassword}
                       onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all placeholder-gray-400"
+                      className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
                       placeholder="••••••••"
                     />
                   </div>
 
                   <button 
                     type="submit"
-                    className="w-full py-4 mt-4 bg-[#8B4513] text-white rounded-2xl font-bold text-lg hover:bg-[#6B3410] transition-all shadow-lg shadow-[#8B4513]/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
+                    className="w-full py-4 mt-4 bg-[#00A3FF] text-white rounded-2xl font-bold text-lg hover:bg-[#0077CC] transition-all shadow-lg shadow-[#00A3FF]/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
                   >
                     {authMode === 'login' ? 'Entrar na Plataforma' : 'Criar Minha Conta'}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -689,7 +690,7 @@ export default function App() {
                 </>
               )}
 
-              <div className="mt-8 pt-6 border-t border-gray-100">
+              <div className="mt-8 pt-6 border-t border-white/10">
                 {authMode === 'login' && !inviteCode ? null : (
                   <button 
                     type="button"
@@ -699,7 +700,7 @@ export default function App() {
                       setAuthPassword('');
                       setAuthName('');
                     }}
-                    className="text-sm font-bold text-gray-500 hover:text-[#8B4513] transition-colors flex items-center gap-2"
+                    className="text-sm font-bold text-gray-400 hover:text-[#00A3FF] transition-colors flex items-center gap-2"
                   >
                     {authMode === 'login' ? 'Possui um convite? Cadastre-se' : 'Já tem uma conta? Faça login'}
                   </button>
@@ -710,8 +711,8 @@ export default function App() {
         </div>
 
         {/* Right Side - Image/Gamification Vibe */}
-        <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-[#F4F4F5]">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#8B4513]/90 to-[#A0522D]/90 mix-blend-multiply z-10"></div>
+        <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-[#0A0A0A]">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#00A3FF]/90 to-[#005580]/90 mix-blend-multiply z-10"></div>
           <img 
             src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop" 
             alt="Equipe colaborando" 
@@ -725,13 +726,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white font-sans flex relative">
       {/* Subtle background texture */}
-      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#D4AF37 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#00F0FF 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
       
       {/* SIDEBAR (DESKTOP) */}
       <aside className="hidden md:flex flex-col w-64 bg-[#121212] border-r border-white/5 z-40 sticky top-0 h-screen">
         <div className="p-6 flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-[#8B4513] rounded-xl rotate-12 flex items-center justify-center shadow-lg shadow-[#8B4513]/20">
-            <Bird className="w-5 h-5 text-white -rotate-12" />
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+            <Cpu className="w-6 h-6 text-[#00A3FF] hidden" />
           </div>
           <h1 className="text-xl font-black tracking-tight text-white uppercase">
             Deep Rewards
@@ -776,8 +778,9 @@ export default function App() {
         {/* MOBILE HEADER */}
         <header className="md:hidden bg-[#121212] border-b border-white/5 sticky top-0 z-40 px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#8B4513] rounded-lg rotate-12 flex items-center justify-center">
-              <Bird className="w-4 h-4 text-white -rotate-12" />
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+              <Cpu className="w-5 h-5 text-[#00A3FF] hidden" />
             </div>
             <h1 className="text-lg font-black tracking-tight text-white uppercase">
               Deep Rewards
@@ -813,7 +816,7 @@ export default function App() {
           <div className="space-y-8 animate-in fade-in duration-300">
             
             {/* Hero Banner Section */}
-            <div className="bg-gradient-to-r from-[#8B4513] to-[#A0522D] rounded-3xl p-6 md:p-8 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+            <div className="bg-gradient-to-r from-[#00A3FF] to-[#005580] rounded-3xl p-6 md:p-8 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
               {/* Animated Background Elements */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
@@ -828,7 +831,7 @@ export default function App() {
               </div>
               <div className="relative z-10 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 border border-white/30">
                 <div className="bg-white rounded-full p-2">
-                  <Star className="w-6 h-6 text-[#D4AF37] fill-[#D4AF37]" />
+                  <Star className="w-6 h-6 text-[#00F0FF] fill-[#00F0FF]" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Seu Saldo</p>
@@ -847,11 +850,11 @@ export default function App() {
                   {availableProducts.length > 0 && (
                     <div>
                       <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                        <Gift className="w-5 h-5 text-[#8B4513]" /> Resgate Agora
+                        <Gift className="w-5 h-5 text-[#00A3FF]" /> Resgate Agora
                       </h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {availableProducts.map(produto => (
-                          <div key={produto.id} className="bg-[#121212] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group border border-[#8B4513]/30 hover:border-[#8B4513]">
+                          <div key={produto.id} className="bg-[#121212] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group border border-[#00A3FF]/30 hover:border-[#00A3FF]">
                             <div className="aspect-[4/3] w-full bg-[#0A0A0A] relative overflow-hidden">
                               <img 
                                 src={produto.imagem_url} 
@@ -859,9 +862,9 @@ export default function App() {
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 referrerPolicy="no-referrer"
                               />
-                              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border border-[#D4AF37]/30">
-                                <Star className="w-3.5 h-3.5 text-[#D4AF37] fill-[#D4AF37]" />
-                                <span className="font-bold text-sm text-[#D4AF37]">{produto.preco_pontos}</span>
+                              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border border-[#00F0FF]/30">
+                                <Star className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
+                                <span className="font-bold text-sm text-[#00F0FF]">{produto.preco_pontos}</span>
                               </div>
                             </div>
                             <div className="p-5 flex flex-col flex-1">
@@ -877,7 +880,7 @@ export default function App() {
                               <div className="mt-auto">
                                 <button 
                                   onClick={() => handleResgate(produto)}
-                                  className="w-full py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 bg-[#8B4513] text-white hover:bg-[#6B3410] shadow-md shadow-[#8B4513]/20 active:scale-[0.98]"
+                                  className="w-full py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 bg-[#00A3FF] text-white hover:bg-[#0077CC] shadow-md shadow-[#00A3FF]/20 active:scale-[0.98]"
                                 >
                                   Resgatar Prêmio
                                 </button>
@@ -928,10 +931,10 @@ export default function App() {
                                   <div className="mb-6 space-y-2">
                                     <div className="flex justify-between text-xs font-bold">
                                       <span className="text-gray-400">Progresso</span>
-                                      <span className="text-[#D4AF37]">Faltam {pointsNeeded} pts</span>
+                                      <span className="text-[#00F0FF]">Faltam {pointsNeeded} pts</span>
                                     </div>
                                     <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                                      <div className="bg-[#8B4513] h-2 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                                      <div className="bg-[#00A3FF] h-2 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
                                     </div>
                                   </div>
                                 )}
@@ -959,7 +962,7 @@ export default function App() {
             {currentUser && resgates.filter(r => r.usuario_id === currentUser.id).length > 0 && (
               <div className="mt-12">
                 <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
-                  <Ticket className="w-6 h-6 text-[#8B4513]" /> Meus Prêmios Resgatados
+                  <Ticket className="w-6 h-6 text-[#00A3FF]" /> Meus Prêmios Resgatados
                 </h2>
                 <div className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden">
                   <div className="divide-y divide-white/5">
@@ -1004,21 +1007,21 @@ export default function App() {
                     <div 
                       key={tarefa.id} 
                       onClick={() => setSelectedTarefa(tarefa.id)}
-                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#8B4513]/50 hover:bg-white/5 transition-all group"
+                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-[#8B4513]/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform border border-[#8B4513]/30">
-                          <Bird className="w-7 h-7 text-[#D4AF37]" />
+                        <div className="w-14 h-14 bg-[#00A3FF]/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform border border-[#00A3FF]/30">
+                          <Cpu className="w-7 h-7 text-[#00F0FF]" />
                         </div>
                         <div>
                           <h3 className="font-bold text-white text-lg">{tarefa.nome}</h3>
                           <div className="flex items-center gap-1 mt-1">
-                            <Star className="w-4 h-4 text-[#D4AF37] fill-[#D4AF37]" />
-                            <span className="text-sm font-bold text-[#D4AF37]">+{tarefa.pontos} pts</span>
+                            <Star className="w-4 h-4 text-[#00F0FF] fill-[#00F0FF]" />
+                            <span className="text-sm font-bold text-[#00F0FF]">+{tarefa.pontos} pts</span>
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#D4AF37] transition-colors" />
+                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors" />
                     </div>
                   ))}
                 </div>
@@ -1034,7 +1037,7 @@ export default function App() {
                   </button>
                   <div>
                     <h2 className="text-xl font-black text-white leading-tight">{tarefas.find(t => t.id === selectedTarefa)?.nome}</h2>
-                    <p className="text-sm text-[#D4AF37] font-bold">Valendo {tarefas.find(t => t.id === selectedTarefa)?.pontos} pts</p>
+                    <p className="text-sm text-[#00F0FF] font-bold">Valendo {tarefas.find(t => t.id === selectedTarefa)?.pontos} pts</p>
                   </div>
                 </div>
 
@@ -1045,14 +1048,14 @@ export default function App() {
                       value={descricao}
                       onChange={(e) => setDescricao(e.target.value)}
                       rows={3}
-                      className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#8B4513]/50 focus:border-transparent transition-colors resize-none placeholder-gray-600"
+                      className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors resize-none placeholder-gray-600"
                       placeholder="Ex: Pedi um lanche ontem a noite..."
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-bold text-white mb-3">Envie a foto ou vídeo da prova</label>
-                    <div className="relative border-2 border-dashed border-white/20 rounded-3xl bg-[#0A0A0A] p-8 text-center cursor-pointer hover:bg-white/5 hover:border-[#8B4513]/50 transition-colors min-h-[200px] flex flex-col items-center justify-center overflow-hidden group">
+                    <div className="relative border-2 border-dashed border-white/20 rounded-3xl bg-[#0A0A0A] p-8 text-center cursor-pointer hover:bg-white/5 hover:border-[#00A3FF]/50 transition-colors min-h-[200px] flex flex-col items-center justify-center overflow-hidden group">
                       <input 
                         type="file"
                         accept="image/*,video/*"
@@ -1074,7 +1077,7 @@ export default function App() {
                       ) : (
                         <div className="flex flex-col items-center gap-3 pointer-events-none">
                           <div className="w-16 h-16 rounded-full bg-[#121212] shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform border border-white/5">
-                            <Camera className="w-7 h-7 text-[#D4AF37]" />
+                            <Camera className="w-7 h-7 text-[#00F0FF]" />
                           </div>
                           <div>
                             <span className="block font-bold text-gray-300">Toque para abrir a galeria</span>
@@ -1091,7 +1094,7 @@ export default function App() {
                     className={`w-full py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
                       isUploading 
                         ? 'bg-white/5 text-gray-500 cursor-not-allowed' 
-                        : 'bg-[#8B4513] text-white hover:bg-[#6B3410] shadow-lg shadow-[#8B4513]/20 active:scale-[0.98]'
+                        : 'bg-[#00A3FF] text-white hover:bg-[#0077CC] shadow-lg shadow-[#00A3FF]/20 active:scale-[0.98]'
                     }`}
                   >
                     {isUploading ? 'Enviando...' : 'Enviar Missão'}
@@ -1125,26 +1128,26 @@ export default function App() {
                       {top3[1] && (
                         <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-500 delay-100">
                           <div className="relative mb-3">
-                            <img src={top3[1].avatar} alt={top3[1].nome} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#9CA3AF] object-cover bg-[#0A0A0A]" />
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#9CA3AF] text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-[#121212]">2</div>
+                            <img src={top3[1].avatar} alt={top3[1].nome} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#7DD3FC] object-cover bg-[#0A0A0A]" />
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#7DD3FC] text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-[#121212]">2</div>
                           </div>
                           <span className="font-bold text-white text-sm sm:text-base truncate max-w-[80px] sm:max-w-[100px] text-center">{top3[1].nome}</span>
-                          <span className="text-xs font-bold text-[#D4AF37] mt-1">{top3[1].pontos_acumulados || top3[1].pontos || 0} pts</span>
-                          <div className="w-16 sm:w-24 h-24 sm:h-32 bg-gradient-to-t from-[#9CA3AF]/20 to-transparent mt-3 rounded-t-lg border-t border-[#9CA3AF]/30"></div>
+                          <span className="text-xs font-bold text-[#00F0FF] mt-1">{top3[1].pontos_acumulados || top3[1].pontos || 0} pts</span>
+                          <div className="w-16 sm:w-24 h-24 sm:h-32 bg-gradient-to-t from-[#7DD3FC]/20 to-transparent mt-3 rounded-t-lg border-t border-[#7DD3FC]/30"></div>
                         </div>
                       )}
 
                       {/* 1st Place */}
                       {top3[0] && (
                         <div className="flex flex-col items-center animate-in slide-in-from-bottom-12 duration-500 z-10">
-                          <Crown className="w-8 h-8 text-[#FBBF24] fill-[#FBBF24] drop-shadow-lg mb-2 animate-bounce" />
+                          <Crown className="w-8 h-8 text-[#00F0FF] fill-[#00F0FF] drop-shadow-lg mb-2 animate-bounce" />
                           <div className="relative mb-3">
-                            <img src={top3[0].avatar} alt={top3[0].nome} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#FBBF24] object-cover bg-[#0A0A0A] shadow-[0_0_30px_rgba(251,191,36,0.3)]" />
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-black w-7 h-7 rounded-full flex items-center justify-center font-black text-sm border-2 border-[#121212]">1</div>
+                            <img src={top3[0].avatar} alt={top3[0].nome} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#00F0FF] object-cover bg-[#0A0A0A] shadow-[0_0_30px_rgba(251,191,36,0.3)]" />
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#00F0FF] text-black w-7 h-7 rounded-full flex items-center justify-center font-black text-sm border-2 border-[#121212]">1</div>
                           </div>
                           <span className="font-black text-white text-base sm:text-lg truncate max-w-[90px] sm:max-w-[120px] text-center">{top3[0].nome}</span>
-                          <span className="text-sm font-black text-[#D4AF37] mt-1">{top3[0].pontos_acumulados || top3[0].pontos || 0} pts</span>
-                          <div className="w-20 sm:w-28 h-32 sm:h-40 bg-gradient-to-t from-[#FBBF24]/20 to-transparent mt-3 rounded-t-lg border-t border-[#FBBF24]/30"></div>
+                          <span className="text-sm font-black text-[#00F0FF] mt-1">{top3[0].pontos_acumulados || top3[0].pontos || 0} pts</span>
+                          <div className="w-20 sm:w-28 h-32 sm:h-40 bg-gradient-to-t from-[#00F0FF]/20 to-transparent mt-3 rounded-t-lg border-t border-[#00F0FF]/30"></div>
                         </div>
                       )}
 
@@ -1152,12 +1155,12 @@ export default function App() {
                       {top3[2] && (
                         <div className="flex flex-col items-center animate-in slide-in-from-bottom-4 duration-500 delay-200">
                           <div className="relative mb-3">
-                            <img src={top3[2].avatar} alt={top3[2].nome} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 border-[#B45309] object-cover bg-[#0A0A0A]" />
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#B45309] text-white w-6 h-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-[#121212]">3</div>
+                            <img src={top3[2].avatar} alt={top3[2].nome} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 border-[#0284C7] object-cover bg-[#0A0A0A]" />
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0284C7] text-white w-6 h-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-[#121212]">3</div>
                           </div>
                           <span className="font-bold text-white text-sm truncate max-w-[70px] sm:max-w-[90px] text-center">{top3[2].nome}</span>
-                          <span className="text-xs font-bold text-[#D4AF37] mt-1">{top3[2].pontos_acumulados || top3[2].pontos || 0} pts</span>
-                          <div className="w-14 sm:w-20 h-16 sm:h-20 bg-gradient-to-t from-[#B45309]/20 to-transparent mt-3 rounded-t-lg border-t border-[#B45309]/30"></div>
+                          <span className="text-xs font-bold text-[#00F0FF] mt-1">{top3[2].pontos_acumulados || top3[2].pontos || 0} pts</span>
+                          <div className="w-14 sm:w-20 h-16 sm:h-20 bg-gradient-to-t from-[#0284C7]/20 to-transparent mt-3 rounded-t-lg border-t border-[#0284C7]/30"></div>
                         </div>
                       )}
                     </div>
@@ -1167,7 +1170,7 @@ export default function App() {
                   <div className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden p-2">
                     <div className="divide-y divide-white/5">
                       {rest.map((user, index) => (
-                        <div key={user.id} className={`flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentUser?.id === user.id ? 'bg-[#8B4513]/10 border border-[#8B4513]/20' : 'hover:bg-white/5'}`}>
+                        <div key={user.id} className={`flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentUser?.id === user.id ? 'bg-[#00A3FF]/10 border border-[#00A3FF]/20' : 'hover:bg-white/5'}`}>
                           <div className="w-8 flex justify-center">
                             <span className="font-bold text-gray-500 text-base">{index + 4}º</span>
                           </div>
@@ -1184,7 +1187,7 @@ export default function App() {
                           </div>
                           
                           <div className="text-right flex items-center gap-1.5 bg-[#0A0A0A] px-3 py-1.5 rounded-full border border-white/10">
-                            <Star className="w-3.5 h-3.5 text-[#D4AF37] fill-[#D4AF37]" />
+                            <Star className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
                             <span className="font-black text-white text-sm">{user.pontos_acumulados || user.pontos || 0}</span>
                           </div>
                         </div>
@@ -1194,17 +1197,17 @@ export default function App() {
 
                   {/* CURRENT USER STICKY BAR (if not in top 3 and not visible in the list easily) */}
                   {currentUser && currentUserRank > 3 && (
-                    <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-auto md:w-full md:max-w-2xl mx-auto bg-[#1A1A1A] border border-[#8B4513]/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] rounded-2xl p-4 flex items-center gap-4 z-40 animate-in slide-in-from-bottom-8">
+                    <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-auto md:w-full md:max-w-2xl mx-auto bg-[#1A1A1A] border border-[#00A3FF]/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] rounded-2xl p-4 flex items-center gap-4 z-40 animate-in slide-in-from-bottom-8">
                       <div className="w-8 flex justify-center">
-                        <span className="font-black text-[#D4AF37] text-lg">{currentUserRank}º</span>
+                        <span className="font-black text-[#00F0FF] text-lg">{currentUserRank}º</span>
                       </div>
-                      <img src={currentUser.avatar} alt={currentUser.nome} className="w-10 h-10 rounded-full border border-[#8B4513]/50 object-cover" />
+                      <img src={currentUser.avatar} alt={currentUser.nome} className="w-10 h-10 rounded-full border border-[#00A3FF]/50 object-cover" />
                       <div className="flex-1 min-w-0">
                         <span className="font-bold text-white text-base truncate">Você</span>
                       </div>
-                      <div className="text-right flex items-center gap-1.5 bg-[#8B4513]/20 px-3 py-1.5 rounded-full border border-[#8B4513]/30">
-                        <Star className="w-3.5 h-3.5 text-[#D4AF37] fill-[#D4AF37]" />
-                        <span className="font-black text-[#D4AF37] text-sm">{currentUser.pontos_acumulados || currentUser.pontos || 0}</span>
+                      <div className="text-right flex items-center gap-1.5 bg-[#00A3FF]/20 px-3 py-1.5 rounded-full border border-[#00A3FF]/30">
+                        <Star className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
+                        <span className="font-black text-[#00F0FF] text-sm">{currentUser.pontos_acumulados || currentUser.pontos || 0}</span>
                       </div>
                     </div>
                   )}
@@ -1224,7 +1227,7 @@ export default function App() {
               </div>
               <button 
                 onClick={copyInviteLink}
-                className="px-5 py-3 bg-[#8B4513] text-white rounded-xl font-bold hover:bg-[#6B3410] transition-colors shadow-md flex items-center justify-center gap-2"
+                className="px-5 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#0077CC] transition-colors shadow-md flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                 Copiar Link de Convite
@@ -1235,7 +1238,7 @@ export default function App() {
             <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden mb-8">
               <div className="p-6 border-b border-white/5 bg-[#121212]">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-[#8B4513]" /> Fila de Avaliação
+                  <Camera className="w-5 h-5 text-[#00A3FF]" /> Fila de Avaliação
                 </h2>
               </div>
               
@@ -1249,7 +1252,7 @@ export default function App() {
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white text-lg">{sub.usuario_nome}</span>
-                            <span className="px-2.5 py-1 bg-[#8B4513]/20 text-[#D4AF37] text-xs font-bold rounded-lg border border-[#8B4513]/30">+{sub.pontos} pts</span>
+                            <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30">+{sub.pontos} pts</span>
                           </div>
                           <div className="text-sm font-bold text-gray-300">{sub.tarefa_nome}</div>
                           <p className="text-sm text-gray-400 bg-[#0A0A0A] p-3 rounded-xl border border-white/5">{sub.descricao}</p>
@@ -1292,7 +1295,7 @@ export default function App() {
               {/* GERENCIAR MISSÕES */}
               <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 p-6 flex flex-col h-[600px]">
                 <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0">
-                  <Bird className="w-5 h-5 text-[#8B4513]" /> Gerenciar Missões
+                  <Cpu className="w-5 h-5 text-[#00A3FF]" /> Gerenciar Missões
                 </h2>
                 
                 {/* Lista de Missões Existentes */}
@@ -1304,7 +1307,7 @@ export default function App() {
                       <div key={tarefa.id} className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-xl border border-white/5">
                         <div>
                           <p className="font-bold text-white text-sm">{tarefa.nome}</p>
-                          <p className="text-xs text-[#D4AF37] font-bold">{tarefa.pontos} pts</p>
+                          <p className="text-xs text-[#00F0FF] font-bold">{tarefa.pontos} pts</p>
                         </div>
                         <div className="flex gap-2">
                           <button 
@@ -1341,7 +1344,7 @@ export default function App() {
                         type="text" 
                         value={editingTarefa ? editTarefaData.nome : newTarefa.nome}
                         onChange={e => editingTarefa ? setEditTarefaData({...editTarefaData, nome: e.target.value}) : setNewTarefa({...newTarefa, nome: e.target.value})}
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#8B4513]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Nome da Missão"
                       />
                     </div>
@@ -1350,10 +1353,10 @@ export default function App() {
                         type="number" 
                         value={editingTarefa ? (editTarefaData.pontos || '') : (newTarefa.pontos || '')}
                         onChange={e => editingTarefa ? setEditTarefaData({...editTarefaData, pontos: Number(e.target.value)}) : setNewTarefa({...newTarefa, pontos: Number(e.target.value)})}
-                        className="w-1/3 bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#8B4513]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
+                        className="w-1/3 bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Pontos"
                       />
-                      <button type="submit" className="flex-1 py-3 bg-[#8B4513] text-white rounded-xl font-bold hover:bg-[#6B3410] transition-colors text-sm shadow-md shadow-[#8B4513]/20">
+                      <button type="submit" className="flex-1 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#0077CC] transition-colors text-sm shadow-md shadow-[#00A3FF]/20">
                         {editingTarefa ? 'Salvar' : 'Adicionar'}
                       </button>
                       {editingTarefa && (
@@ -1373,7 +1376,7 @@ export default function App() {
               {/* GERENCIAR PRÊMIOS */}
               <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 p-6 flex flex-col h-[600px]">
                 <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0">
-                  <Gift className="w-5 h-5 text-[#8B4513]" /> Gerenciar Prêmios
+                  <Gift className="w-5 h-5 text-[#00A3FF]" /> Gerenciar Prêmios
                 </h2>
                 
                 {/* Lista de Prêmios Existentes */}
@@ -1420,7 +1423,7 @@ export default function App() {
                           <img src={produto.imagem_url} alt={produto.nome} className="w-10 h-10 rounded-lg object-cover bg-[#121212] border border-white/10" />
                           <div>
                             <p className="font-bold text-white text-sm">{produto.nome}</p>
-                            <p className="text-xs text-[#D4AF37] font-bold">{produto.preco_pontos} pts • {produto.estoque} em estoque</p>
+                            <p className="text-xs text-[#00F0FF] font-bold">{produto.preco_pontos} pts • {produto.estoque} em estoque</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -1466,7 +1469,7 @@ export default function App() {
                         type="text" 
                         value={editingProduto ? editProdutoData.nome : newProduto.nome}
                         onChange={e => editingProduto ? setEditProdutoData({...editProdutoData, nome: e.target.value}) : setNewProduto({...newProduto, nome: e.target.value})}
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#8B4513]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Nome do Prêmio"
                       />
                     </div>
@@ -1475,14 +1478,14 @@ export default function App() {
                         type="number" 
                         value={editingProduto ? (editProdutoData.preco_pontos || '') : (newProduto.preco_pontos || '')}
                         onChange={e => editingProduto ? setEditProdutoData({...editProdutoData, preco_pontos: Number(e.target.value)}) : setNewProduto({...newProduto, preco_pontos: Number(e.target.value)})}
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#8B4513]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Preço (Pontos)"
                       />
                       <input 
                         type="number" 
                         value={editingProduto ? (editProdutoData.estoque || '') : (newProduto.estoque || '')}
                         onChange={e => editingProduto ? setEditProdutoData({...editProdutoData, estoque: Number(e.target.value)}) : setNewProduto({...newProduto, estoque: Number(e.target.value)})}
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#8B4513]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Estoque"
                       />
                     </div>
@@ -1511,7 +1514,7 @@ export default function App() {
                                 }
                               }
                             }}
-                            className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#F5F5DC] file:text-[#8B4513] hover:file:bg-[#E8E8C8] transition-colors cursor-pointer"
+                            className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#F5F5DC] file:text-[#00A3FF] hover:file:bg-[#E8E8C8] transition-colors cursor-pointer"
                           />
                         </div>
                       </div>
@@ -1532,7 +1535,7 @@ export default function App() {
                           setNewProdutoFile(null);
                           setNewProdutoPreview(null);
                         }}
-                        className="w-full bg-gray-50 border-none rounded-xl p-3 text-gray-900 font-medium focus:ring-2 focus:ring-[#8B4513]/20 focus:bg-white transition-colors text-sm"
+                        className="w-full bg-[#121212] border border-white/5 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:bg-[#1A1A1A] transition-colors text-sm"
                         placeholder="URL da Imagem"
                       />
                     </div>
@@ -1564,7 +1567,7 @@ export default function App() {
             <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden mt-8">
               <div className="p-6 border-b border-white/5 bg-[#121212]">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Ticket className="w-5 h-5 text-[#8B4513]" /> Histórico de Resgates
+                  <Ticket className="w-5 h-5 text-[#00A3FF]" /> Histórico de Resgates
                 </h2>
               </div>
               
@@ -1580,7 +1583,7 @@ export default function App() {
                             <span className="font-bold text-white text-lg">{resgate.usuario_nome}</span>
                             <span className="text-sm text-gray-500">• {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}</span>
                           </div>
-                          <div className="text-sm font-bold text-[#D4AF37]">{resgate.produto_nome}</div>
+                          <div className="text-sm font-bold text-[#00F0FF]">{resgate.produto_nome}</div>
                         </div>
                         
                         <div className="flex gap-2 w-full md:w-auto">
@@ -1608,7 +1611,7 @@ export default function App() {
             <section className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden mt-8">
               <div className="p-6 border-b border-white/5 bg-[#121212]">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#8B4513]" /> Gerenciar Usuários
+                  <Shield className="w-5 h-5 text-[#00A3FF]" /> Gerenciar Usuários
                 </h2>
               </div>
               
@@ -1625,7 +1628,7 @@ export default function App() {
                       </div>
                       <div className="flex items-center gap-4 w-full sm:w-auto">
                         <div className="text-right">
-                          <p className="text-sm font-bold text-[#D4AF37]">{user.pontos} pts atuais</p>
+                          <p className="text-sm font-bold text-[#00F0FF]">{user.pontos} pts atuais</p>
                           <p className="text-xs text-gray-500">{user.pontos_acumulados} pts total</p>
                         </div>
                         <button 
@@ -1672,7 +1675,7 @@ function SidebarNavButton({ active, onClick, icon, text }: { active: boolean, on
       onClick={onClick}
       className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all ${
         active 
-          ? 'bg-[#8B4513] text-white shadow-lg shadow-[#8B4513]/20' 
+          ? 'bg-[#00A3FF] text-white shadow-lg shadow-[#00A3FF]/20' 
           : 'text-gray-400 hover:text-white hover:bg-white/5'
       }`}
     >
@@ -1687,10 +1690,10 @@ function MobileNavButton({ active, onClick, icon, text }: { active: boolean, onC
     <button 
       onClick={onClick}
       className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
-        active ? 'text-[#D4AF37]' : 'text-gray-500 hover:text-gray-300'
+        active ? 'text-[#00F0FF]' : 'text-gray-500 hover:text-gray-300'
       }`}
     >
-      <div className={`[&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? '[&>svg]:fill-[#D4AF37]/20' : ''}`}>
+      <div className={`[&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? '[&>svg]:fill-[#00F0FF]/20' : ''}`}>
         {icon}
       </div>
       <span className="text-[10px] font-bold">{text}</span>
