@@ -14,7 +14,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'placar' | 'enviar' | 'recompensas' | 'admin'>('recompensas');
+  const [activeTab, setActiveTab] = useState<'placar' | 'enviar' | 'recompensas' | 'admin' | 'mural'>('recompensas');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -50,9 +50,31 @@ export default function App() {
   const [authName, setAuthName] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
 
-  const showNotification = (msg: string, type: 'success'|'error') => {
+  const playSound = (type: 'success' | 'error' | 'coin') => {
+    try {
+      const audio = new Audio();
+      if (type === 'success') audio.src = 'https://cdn.freesound.org/previews/320/320655_527080-lq.mp3'; // soft chime
+      if (type === 'error') audio.src = 'https://cdn.freesound.org/previews/142/142608_1840011-lq.mp3'; // error beep
+      if (type === 'coin') audio.src = 'https://cdn.freesound.org/previews/341/341695_5858296-lq.mp3'; // coin sound
+      audio.volume = 0.3;
+      audio.play().catch(() => {}); // catch autoplay restrictions
+    } catch (e) {}
+  };
+
+  const showNotification = (msg: string, type: 'success'|'error', sound?: 'success' | 'error' | 'coin' | 'none') => {
+    if (sound !== 'none') {
+      playSound(sound || type);
+    }
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  const getUserTier = (pontos: number) => {
+    if (pontos >= 5000) return { name: 'Diamante', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20', icon: '💎' };
+    if (pontos >= 2000) return { name: 'Ouro', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: '🏆' };
+    if (pontos >= 500) return { name: 'Prata', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20', icon: '🥈' };
+    if (pontos >= 100) return { name: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: '🥉' };
+    return { name: 'Iniciante', color: 'text-white/60', bg: 'bg-white/5', border: 'border-white/10', icon: '🌱' };
   };
 
   React.useEffect(() => {
@@ -286,7 +308,7 @@ export default function App() {
         colors: ['#00F0FF', '#00A3FF', '#FFFFFF']
       });
       
-      showNotification(`Eba! ${produto.nome} resgatado com sucesso!`, 'success');
+      showNotification(`Eba! ${produto.nome} resgatado com sucesso!`, 'success', 'coin');
       fetchAllData();
       fetchUserData(currentUser.id);
     } catch (error: any) {
@@ -389,8 +411,14 @@ export default function App() {
   };
 
   const handleRejeitar = async (submissao: any) => {
+    const motivo = window.prompt('Motivo da rejeição (opcional):');
+    if (motivo === null) return; // Cancelled
+
     try {
-      const { error } = await supabase.from('submissoes').update({ status: 'rejeitado' }).eq('id', submissao.id);
+      const { error } = await supabase.from('submissoes').update({ 
+        status: 'rejeitado',
+        motivo_rejeicao: motivo || 'Sem motivo especificado'
+      }).eq('id', submissao.id);
       if (error) throw error;
       showNotification('Missão rejeitada.', 'error');
       fetchAllData();
@@ -808,17 +836,21 @@ export default function App() {
         </div>
 
         <div className="px-4 mb-8">
-          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
+          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-20 ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
             <div className="relative group cursor-pointer flex-shrink-0">
-              <img src={currentUser.avatar} alt="Avatar" className="w-10 h-10 rounded-full bg-black/50 border border-white/20 object-cover" />
+              <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
               <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                 <Camera className="w-4 h-4 text-white" />
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </label>
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs text-gray-400 font-medium">Olá,</p>
               <p className="text-sm font-bold text-white truncate">{currentUser.nome}</p>
+              <div className={`flex items-center gap-1 text-xs font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
+                <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
+                <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -827,6 +859,7 @@ export default function App() {
           <SidebarNavButton active={activeTab === 'recompensas'} onClick={() => setActiveTab('recompensas')} icon={<Gift className="w-5 h-5" />} text="Prêmios" />
           <SidebarNavButton active={activeTab === 'enviar'} onClick={() => setActiveTab('enviar')} icon={<Camera className="w-5 h-5" />} text="Missões" />
           <SidebarNavButton active={activeTab === 'placar'} onClick={() => setActiveTab('placar')} icon={<Trophy className="w-5 h-5" />} text="Ranking" />
+          <SidebarNavButton active={activeTab === 'mural'} onClick={() => setActiveTab('mural')} icon={<Star className="w-5 h-5" />} text="Mural" />
           {currentUser?.cargo === 'admin' && (
             <SidebarNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield className="w-5 h-5" />} text="Admin" />
           )}
@@ -1118,6 +1151,42 @@ export default function App() {
                     </div>
                   ))}
                 </div>
+
+                {/* MINHAS MISSÕES */}
+                <div className="mt-12">
+                  <h2 className="text-2xl font-black text-white tracking-tight mb-6">Minhas Missões</h2>
+                  {submissoes.filter(s => s.usuario_id === currentUser.id).length === 0 ? (
+                    <div className="p-8 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5">
+                      Você ainda não enviou nenhuma missão.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {submissoes.filter(s => s.usuario_id === currentUser.id).map(sub => (
+                        <div key={sub.id} className="p-4 bg-[#121212] rounded-2xl border border-white/5 flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-bold text-white">{sub.tarefa_nome}</h3>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(sub.data_envio).toLocaleDateString('pt-BR')}</p>
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                              sub.status === 'aprovado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                              sub.status === 'rejeitado' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                              'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                            }`}>
+                              {sub.status.toUpperCase()}
+                            </div>
+                          </div>
+                          {sub.status === 'rejeitado' && sub.motivo_rejeicao && (
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
+                              <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">Motivo da Rejeição:</p>
+                              <p className="text-sm text-red-200 italic">"{sub.motivo_rejeicao}"</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 p-6 md:p-8 space-y-6">
@@ -1225,6 +1294,10 @@ export default function App() {
                             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#7DD3FC] text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-[#121212]">2</div>
                           </div>
                           <span className="font-bold text-white text-sm sm:text-base truncate max-w-[80px] sm:max-w-[100px] text-center">{top3[1].nome}</span>
+                          <div className={`flex items-center gap-1 text-[10px] font-bold mt-0.5 ${getUserTier(top3[1].pontos_acumulados || 0).color}`}>
+                            <span>{getUserTier(top3[1].pontos_acumulados || 0).icon}</span>
+                            <span>{getUserTier(top3[1].pontos_acumulados || 0).name}</span>
+                          </div>
                           <span className="text-xs font-bold text-[#00F0FF] mt-1">{top3[1].pontos_acumulados || top3[1].pontos || 0} pts</span>
                           <div className="w-16 sm:w-24 h-24 sm:h-32 bg-gradient-to-t from-[#7DD3FC]/20 to-transparent mt-3 rounded-t-lg border-t border-[#7DD3FC]/30"></div>
                         </div>
@@ -1239,6 +1312,10 @@ export default function App() {
                             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#00F0FF] text-black w-7 h-7 rounded-full flex items-center justify-center font-black text-sm border-2 border-[#121212]">1</div>
                           </div>
                           <span className="font-black text-white text-base sm:text-lg truncate max-w-[90px] sm:max-w-[120px] text-center">{top3[0].nome}</span>
+                          <div className={`flex items-center gap-1 text-[10px] font-bold mt-0.5 ${getUserTier(top3[0].pontos_acumulados || 0).color}`}>
+                            <span>{getUserTier(top3[0].pontos_acumulados || 0).icon}</span>
+                            <span>{getUserTier(top3[0].pontos_acumulados || 0).name}</span>
+                          </div>
                           <span className="text-sm font-black text-[#00F0FF] mt-1">{top3[0].pontos_acumulados || top3[0].pontos || 0} pts</span>
                           <div className="w-20 sm:w-28 h-32 sm:h-40 bg-gradient-to-t from-[#00F0FF]/20 to-transparent mt-3 rounded-t-lg border-t border-[#00F0FF]/30"></div>
                         </div>
@@ -1252,6 +1329,10 @@ export default function App() {
                             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0284C7] text-white w-6 h-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-[#121212]">3</div>
                           </div>
                           <span className="font-bold text-white text-sm truncate max-w-[70px] sm:max-w-[90px] text-center">{top3[2].nome}</span>
+                          <div className={`flex items-center gap-1 text-[10px] font-bold mt-0.5 ${getUserTier(top3[2].pontos_acumulados || 0).color}`}>
+                            <span>{getUserTier(top3[2].pontos_acumulados || 0).icon}</span>
+                            <span>{getUserTier(top3[2].pontos_acumulados || 0).name}</span>
+                          </div>
                           <span className="text-xs font-bold text-[#00F0FF] mt-1">{top3[2].pontos_acumulados || top3[2].pontos || 0} pts</span>
                           <div className="w-14 sm:w-20 h-16 sm:h-20 bg-gradient-to-t from-[#0284C7]/20 to-transparent mt-3 rounded-t-lg border-t border-[#0284C7]/30"></div>
                         </div>
@@ -1276,6 +1357,10 @@ export default function App() {
                               {user.cargo === 'admin' && (
                                 <span className="px-2 py-0.5 bg-white/5 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider shrink-0 border border-white/10">Admin</span>
                               )}
+                            </div>
+                            <div className={`flex items-center gap-1 text-[10px] font-bold mt-0.5 ${getUserTier(user.pontos_acumulados || 0).color}`}>
+                              <span>{getUserTier(user.pontos_acumulados || 0).icon}</span>
+                              <span>{getUserTier(user.pontos_acumulados || 0).name}</span>
                             </div>
                           </div>
                           
@@ -1305,6 +1390,79 @@ export default function App() {
                     </div>
                   )}
                 </>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* MURAL TAB */}
+        {activeTab === 'mural' && (
+          <div className="space-y-6 animate-in fade-in duration-300 max-w-2xl mx-auto pb-20">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-black text-white tracking-tight">Mural de Atividades</h1>
+              <p className="text-gray-400 mt-2 font-medium">Veja o que a galera está conquistando!</p>
+            </div>
+
+            {(() => {
+              const atividades = [
+                ...submissoes.filter(s => s.status === 'aprovado').map(s => ({
+                  id: `sub-${s.id}`,
+                  type: 'missao',
+                  date: new Date(s.data_envio),
+                  user: users.find(u => u.id === s.usuario_id),
+                  data: s
+                })),
+                ...resgates.map(r => ({
+                  id: `res-${r.id}`,
+                  type: 'resgate',
+                  date: new Date(r.created_at),
+                  user: users.find(u => u.id === r.usuario_id),
+                  data: r
+                }))
+              ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 50); // Últimas 50 atividades
+
+              if (atividades.length === 0) {
+                return (
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5">
+                    Nenhuma atividade recente.
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
+                  {atividades.map((atividade) => (
+                    <div key={atividade.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      {/* Timeline dot */}
+                      <div className={`flex items-center justify-center w-12 h-12 rounded-full border-4 border-[#0A0A0A] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${
+                        atividade.type === 'missao' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#00A3FF]/20 text-[#00F0FF]'
+                      }`}>
+                        {atividade.type === 'missao' ? <Star className="w-5 h-5 fill-current" /> : <Gift className="w-5 h-5" />}
+                      </div>
+                      
+                      {/* Content Card */}
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-4 rounded-2xl bg-[#121212] border border-white/5 shadow-sm hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-3 mb-2">
+                          <img src={atividade.user?.avatar} alt={atividade.user?.nome} className="w-8 h-8 rounded-full object-cover border border-white/10" />
+                          <div>
+                            <p className="text-sm font-bold text-white">{atividade.user?.nome}</p>
+                            <p className="text-xs text-gray-500">{atividade.date.toLocaleDateString('pt-BR')} às {atividade.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                        
+                        {atividade.type === 'missao' ? (
+                          <p className="text-sm text-gray-300">
+                            Completou a missão <span className="font-bold text-white">{atividade.data.tarefa_nome}</span> e ganhou <span className="text-emerald-400 font-bold">+{atividade.data.pontos} pts</span>!
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-300">
+                            Resgatou <span className="font-bold text-white">{atividade.data.produto_nome}</span> por <span className="text-[#00F0FF] font-bold">{atividade.data.preco_pontos} pts</span>!
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               );
             })()}
           </div>
@@ -1773,6 +1931,7 @@ export default function App() {
             <MobileNavButton active={activeTab === 'recompensas'} onClick={() => setActiveTab('recompensas')} icon={<Gift />} text="Prêmios" />
             <MobileNavButton active={activeTab === 'enviar'} onClick={() => setActiveTab('enviar')} icon={<Camera />} text="Missões" />
             <MobileNavButton active={activeTab === 'placar'} onClick={() => setActiveTab('placar')} icon={<Trophy />} text="Ranking" />
+            <MobileNavButton active={activeTab === 'mural'} onClick={() => setActiveTab('mural')} icon={<Star />} text="Mural" />
             {currentUser?.cargo === 'admin' && (
               <MobileNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield />} text="Admin" />
             )}
