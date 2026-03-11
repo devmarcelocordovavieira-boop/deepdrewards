@@ -601,6 +601,11 @@ export default function App() {
     if (!confirm) return;
 
     try {
+      // Delete associated records first to avoid foreign key constraint errors
+      await supabase.from('submissoes').delete().eq('usuario_id', userId);
+      await supabase.from('resgates').delete().eq('usuario_id', userId);
+      await supabase.from('penalizacoes').delete().eq('usuario_id', userId);
+
       const { error } = await supabase.from('usuarios').delete().eq('id', userId);
       if (error) throw error;
       
