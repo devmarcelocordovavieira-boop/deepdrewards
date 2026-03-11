@@ -125,7 +125,11 @@ export default function App() {
   const fetchUserData = async (userId: string) => {
     try {
       const { data, error } = await supabase.from('usuarios').select('*').eq('id', userId).single();
-      if (error) throw error;
+      if (error) {
+        // If user is not found in the database (e.g., deleted), sign them out
+        await supabase.auth.signOut();
+        throw error;
+      }
       setCurrentUser({
         ...data,
         avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.nome}`
@@ -133,6 +137,7 @@ export default function App() {
       fetchAllData();
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
+      setCurrentUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -230,11 +235,26 @@ export default function App() {
           setInviteCode(null);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: authEmail,
           password: authPassword,
         });
         if (error) throw error;
+        
+        // Check if user exists in our database
+        if (authData.user) {
+          const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('id')
+            .eq('id', authData.user.id)
+            .single();
+            
+          if (userError || !userData) {
+            await supabase.auth.signOut();
+            throw new Error('Esta conta foi removida pelo administrador.');
+          }
+        }
+        
         showNotification('Login efetuado!', 'success');
       }
     } catch (error: any) {
@@ -606,8 +626,12 @@ export default function App() {
       await supabase.from('resgates').delete().eq('usuario_id', userId);
       await supabase.from('penalizacoes').delete().eq('usuario_id', userId);
 
-      const { error } = await supabase.from('usuarios').delete().eq('id', userId);
+      const { data, error } = await supabase.from('usuarios').delete().eq('id', userId).select();
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        throw new Error('Bloqueado pelas políticas de segurança (RLS) do Supabase.');
+      }
       
       showNotification('Usuário removido com sucesso.', 'success');
       fetchAllData();
