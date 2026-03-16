@@ -1607,7 +1607,8 @@ export default function App() {
                           <button 
                             onClick={() => {
                               setEditingTarefa(tarefa);
-                              setEditTarefaData({ nome: tarefa.nome, pontos: tarefa.pontos });
+                              setEditTarefaData({ nome: tarefa.nome, pontos: tarefa.pontos, regras: tarefa.regras || '', imagem_url: tarefa.imagem_url || '' });
+                              setEditTarefaPreview(tarefa.imagem_url || null);
                             }}
                             className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
                             title="Editar"
@@ -1674,7 +1675,7 @@ export default function App() {
                         }}
                       >
                         {(editingTarefa ? editTarefaPreview : newTarefaPreview) ? (
-                          <img src={(editingTarefa ? editTarefaPreview : newTarefaPreview) || ''} alt="Preview" className="w-full h-32 object-cover rounded-lg mb-2" />
+                          <img src={(editingTarefa ? editTarefaPreview : newTarefaPreview) || ''} alt="Preview" className="w-full h-24 object-cover rounded-lg mb-2" />
                         ) : (
                           <div className="text-gray-500 text-xs py-4">
                             Arraste uma imagem aqui ou clique para selecionar
