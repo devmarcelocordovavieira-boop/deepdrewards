@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
-  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock
+  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -52,6 +52,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [showRankingsModal, setShowRankingsModal] = useState(false);
 
   const playSound = (type: 'success' | 'error' | 'coin') => {
     try {
@@ -78,6 +79,36 @@ export default function App() {
     if (pontos >= 500) return { name: 'Prata', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20', icon: '🥈' };
     if (pontos >= 100) return { name: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: '🥉' };
     return { name: 'Iniciante', color: 'text-white/60', bg: 'bg-white/5', border: 'border-white/10', icon: '🌱' };
+  };
+
+  const getRankProgress = (pontos: number) => {
+    const tiers = [
+      { name: 'Iniciante', min: 0, max: 99, icon: '🌱' },
+      { name: 'Bronze', min: 100, max: 499, icon: '🥉' },
+      { name: 'Prata', min: 500, max: 1999, icon: '🥈' },
+      { name: 'Ouro', min: 2000, max: 4999, icon: '🏆' },
+      { name: 'Diamante', min: 5000, max: Infinity, icon: '💎' }
+    ];
+
+    const currentTierIndex = tiers.findIndex(t => pontos >= t.min && pontos <= t.max);
+    const currentTier = tiers[currentTierIndex];
+    const nextTier = tiers[currentTierIndex + 1];
+
+    if (!nextTier) {
+      return { percentage: 100, text: 'Nível Máximo', nextTierName: '' };
+    }
+
+    const pointsInCurrentTier = pontos - currentTier.min;
+    const pointsNeededForNextTier = nextTier.min - currentTier.min;
+    const percentage = Math.min(100, Math.max(0, (pointsInCurrentTier / pointsNeededForNextTier) * 100));
+    const pointsRemaining = nextTier.min - pontos;
+
+    return {
+      percentage,
+      text: `Faltam ${pointsRemaining} pts para ${nextTier.name}`,
+      nextTierName: nextTier.name,
+      nextTierIcon: nextTier.icon
+    };
   };
 
   React.useEffect(() => {
@@ -935,22 +966,55 @@ export default function App() {
         </div>
 
         <div className="px-4 mb-8">
-          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
+          <div className="flex flex-col gap-3 p-3 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-20 ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
-            <div className="relative group cursor-pointer flex-shrink-0">
-              <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
-              <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                <Camera className="w-4 h-4 text-white" />
-                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-              </label>
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-white truncate">{currentUser.nome}</p>
-              <div className={`flex items-center gap-1 text-xs font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
-                <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
-                <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+            <div className="flex items-center gap-3">
+              <div className="relative group cursor-pointer flex-shrink-0">
+                <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                  <Camera className="w-4 h-4 text-white" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                </label>
+              </div>
+              <div className="overflow-hidden flex-1">
+                <p className="text-sm font-bold text-white truncate">{currentUser.nome}</p>
+                <div className="flex items-center justify-between gap-1">
+                  <div className={`flex items-center gap-1 text-xs font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
+                    <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
+                    <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+                  </div>
+                  <button onClick={() => setShowRankingsModal(true)} className="text-gray-500 hover:text-white transition-colors" title="Ver todos os rankings">
+                    <Info className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
+            
+            {/* Progress Bar */}
+            {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
+              <div className="mt-1">
+                <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
+                  <span>{currentUser.pontos_acumulados || 0} pts</span>
+                  <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
+                </div>
+                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
+                  <div 
+                    className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out`}
+                    style={{ 
+                      width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
+                      backgroundColor: 'currentColor',
+                      color: getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '') === 'white/60' ? '#9ca3af' : 
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'cyan' ? '#22d3ee' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'yellow' ? '#facc15' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-white/20"></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -2194,6 +2258,65 @@ export default function App() {
         </nav>
 
       </div>
+      
+      {/* Rankings Modal */}
+      {showRankingsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#00A3FF]/20 to-transparent pointer-events-none"></div>
+            
+            <div className="p-6 relative z-10 border-b border-white/5 flex justify-between items-center">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-[#00F0FF]" />
+                Níveis do Ranking
+              </h2>
+              <button 
+                onClick={() => setShowRankingsModal(false)}
+                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 relative z-10">
+              {[
+                { name: 'Iniciante', min: 0, max: 99, icon: '🌱', color: 'text-white/60', bg: 'bg-white/5', border: 'border-white/10' },
+                { name: 'Bronze', min: 100, max: 499, icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' },
+                { name: 'Prata', min: 500, max: 1999, icon: '🥈', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20' },
+                { name: 'Ouro', min: 2000, max: 4999, icon: '🏆', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+                { name: 'Diamante', min: 5000, max: '∞', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }
+              ].map((tier, index) => {
+                const isCurrent = currentUser?.pontos_acumulados >= tier.min && (tier.max === '∞' || currentUser?.pontos_acumulados <= tier.max);
+                return (
+                  <div 
+                    key={index} 
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                      isCurrent 
+                        ? `${tier.bg} ${tier.border} shadow-[0_0_15px_rgba(0,163,255,0.1)]` 
+                        : 'bg-[#121212] border-white/5 opacity-70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-black/50 border ${tier.border}`}>
+                        {tier.icon}
+                      </div>
+                      <div>
+                        <h3 className={`font-bold ${isCurrent ? tier.color : 'text-gray-300'}`}>
+                          {tier.name}
+                          {isCurrent && <span className="ml-2 text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Você</span>}
+                        </h3>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">
+                          {tier.min} {tier.max !== '∞' ? `- ${tier.max}` : '+'} pontos
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

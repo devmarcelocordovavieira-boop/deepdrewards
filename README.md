@@ -1,15 +1,46 @@
-# DEEP GAME - Deploy Guide
+# DEEP GAME - Plataforma de Gamificação
 
-Este projeto foi desenvolvido como uma Single Page Application (SPA) em React com Vite, utilizando **Cloudflare Pages** para hospedagem e **Supabase (PostgreSQL)** para o banco de dados.
+O **DEEP GAME** é uma plataforma completa de gamificação projetada para engajar equipes através de missões, recompensas e um sistema de ranking competitivo. Desenvolvido como uma Single Page Application (SPA) moderna, rápida e responsiva.
 
-## 1. Configuração do Banco de Dados (Supabase)
+## 🚀 Tecnologias Utilizadas
+
+- **Frontend:** React 18, TypeScript, Vite
+- **Estilização:** Tailwind CSS, Lucide React (Ícones)
+- **Backend & Banco de Dados:** Supabase (PostgreSQL, Auth, Storage)
+- **Hospedagem Recomendada:** Cloudflare Pages ou Vercel
+
+## ✨ Principais Funcionalidades
+
+- **Sistema de Missões:** Usuários podem enviar fotos/vídeos de missões concluídas para aprovação.
+- **Catálogo de Prêmios:** Resgate de recompensas utilizando os pontos acumulados.
+- **Ranking Competitivo:** Tabela de classificação em tempo real com níveis (Iniciante, Bronze, Prata, Ouro, Diamante).
+- **Mural de Atividades:** Feed público mostrando as últimas conquistas e resgates da equipe.
+- **Painel Administrativo:** Área exclusiva para administradores aprovarem missões, gerenciarem o catálogo e penalizarem/removerem usuários.
+
+---
+
+## 🛠️ Guia de Instalação e Deploy
+
+### 1. Configuração do Banco de Dados (Supabase)
 
 1. Crie uma conta e um novo projeto no [Supabase](https://supabase.com/).
 2. Acesse o **SQL Editor** no painel do Supabase.
-3. Copie o conteúdo do arquivo `supabase.sql` gerado neste projeto e execute-o no editor. Isso criará as tabelas necessárias e as funções RPC.
-4. Vá em **Project Settings > API** e copie a sua `Project URL` e a `anon public key`.
+3. Copie o conteúdo do arquivo `supabase.sql` incluído neste projeto e execute-o. Isso criará todas as tabelas, políticas de segurança (RLS) e funções necessárias.
+4. Vá em **Storage** e crie um novo bucket chamado `provas_midia` e torne-o **Público**.
+5. Vá em **Project Settings > API** e copie a sua `Project URL` e a `anon public key`.
 
-## 2. Deploy no Cloudflare Pages
+### 2. Configuração Local (Desenvolvimento)
+
+1. Clone o repositório.
+2. Crie um arquivo `.env` na raiz do projeto com as suas credenciais do Supabase:
+   ```env
+   VITE_SUPABASE_URL=sua_url_aqui
+   VITE_SUPABASE_ANON_KEY=sua_chave_anon_aqui
+   ```
+3. Instale as dependências executando `npm install`.
+4. Inicie o servidor de desenvolvimento com `npm run dev`.
+
+### 3. Deploy no Cloudflare Pages (Recomendado)
 
 1. Envie o código deste projeto para um repositório no **GitHub**.
 2. Crie uma conta no [Cloudflare](https://dash.cloudflare.com/) e vá em **Workers & Pages > Create application > Pages > Connect to Git**.
@@ -23,7 +54,13 @@ Este projeto foi desenvolvido como uma Single Page Application (SPA) em React co
    - `VITE_SUPABASE_ANON_KEY`: Cole a sua chave `anon public` do Supabase.
 6. Clique em **Save and Deploy**.
 
-## 3. Estrutura do Projeto
+---
 
-- `src/App.tsx`: Interface Frontend (SPA) construída com React e Tailwind CSS.
-- `supabase.sql`: Script de modelagem do banco de dados relacional.
+## 👑 Primeiro Acesso (Admin)
+
+O primeiro usuário a se cadastrar na plataforma através do link de registro padrão será automaticamente definido como um usuário comum. Para transformá-lo em **Administrador**:
+
+1. Acesse o painel do Supabase.
+2. Vá em **Table Editor > usuarios**.
+3. Encontre o seu usuário e altere a coluna `cargo` de `comum` para `admin`.
+4. Recarregue a página da aplicação. O menu "Admin" agora estará disponível.
