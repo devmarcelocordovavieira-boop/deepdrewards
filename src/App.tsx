@@ -38,9 +38,7 @@ export default function App() {
   const [draggedProdutoId, setDraggedProdutoId] = useState<string | null>(null);
 
   // Admin forms state
-  const [newTarefa, setNewTarefa] = useState({ nome: '', pontos: 0, regras: '', imagem_url: '' });
-  const [newTarefaFile, setNewTarefaFile] = useState<File | null>(null);
-  const [newTarefaPreview, setNewTarefaPreview] = useState<string | null>(null);
+  const [newTarefa, setNewTarefa] = useState({ nome: '', pontos: 0 });
   const [newProduto, setNewProduto] = useState({ nome: '', descricao: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
   const [newProdutoFile, setNewProdutoFile] = useState<File | null>(null);
   const [newProdutoPreview, setNewProdutoPreview] = useState<string | null>(null);
@@ -437,29 +435,13 @@ export default function App() {
     if (!newTarefa.nome || newTarefa.pontos <= 0) return showNotification('Preencha nome e pontos válidos.', 'error');
     
     try {
-      let finalImageUrl = newTarefa.imagem_url || `https://picsum.photos/seed/${newTarefa.nome}/600/400`;
-      
-      if (newTarefaFile && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-        const fileExt = newTarefaFile.name.split('.').pop();
-        const fileName = `tarefa-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('provas_midia').upload(fileName, newTarefaFile);
-        if (uploadError) throw uploadError;
-        
-        const { data: publicUrlData } = supabase.storage.from('provas_midia').getPublicUrl(fileName);
-        finalImageUrl = publicUrlData.publicUrl;
-      }
-
       const { error } = await supabase.from('tipos_tarefas').insert([{
         nome: newTarefa.nome,
-        pontos: newTarefa.pontos,
-        regras: newTarefa.regras,
-        imagem_url: finalImageUrl
+        pontos: newTarefa.pontos
       }]);
       if (error) throw error;
       
-      setNewTarefa({ nome: '', pontos: 0, regras: '', imagem_url: '' });
-      setNewTarefaFile(null);
-      setNewTarefaPreview(null);
+      setNewTarefa({ nome: '', pontos: 0 });
       showNotification('Missão criada com sucesso!', 'success');
       fetchAllData();
     } catch (error: any) {
@@ -511,29 +493,14 @@ export default function App() {
     if (!editTarefaData.nome || editTarefaData.pontos <= 0 || !editingTarefa) return showNotification('Preencha nome e pontos válidos.', 'error');
     
     try {
-      let finalImageUrl = editTarefaData.imagem_url;
-      if (editTarefaFile && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-        const fileExt = editTarefaFile.name.split('.').pop();
-        const fileName = `tarefa-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('provas_midia').upload(fileName, editTarefaFile);
-        if (uploadError) throw uploadError;
-        
-        const { data: publicUrlData } = supabase.storage.from('provas_midia').getPublicUrl(fileName);
-        finalImageUrl = publicUrlData.publicUrl;
-      }
-      
       const { error } = await supabase.from('tipos_tarefas').update({
         nome: editTarefaData.nome,
-        pontos: editTarefaData.pontos,
-        regras: editTarefaData.regras,
-        imagem_url: finalImageUrl
+        pontos: editTarefaData.pontos
       }).eq('id', editingTarefa.id);
       if (error) throw error;
       
       setEditingTarefa(null);
-      setEditTarefaData({ nome: '', pontos: 0, regras: '', imagem_url: '' });
-      setEditTarefaFile(null);
-      setEditTarefaPreview(null);
+      setEditTarefaData({ nome: '', pontos: 0 });
       showNotification('Missão atualizada com sucesso!', 'success');
       fetchAllData();
     } catch (error: any) {
@@ -755,7 +722,7 @@ export default function App() {
                 <Cpu className="w-8 h-8 text-[#00A3FF] hidden" />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-white uppercase">
-                Deep Game
+                DEEP GAME
               </h1>
             </div>
 
@@ -867,7 +834,7 @@ export default function App() {
             <Cpu className="w-6 h-6 text-[#00A3FF] hidden" />
           </div>
           <h1 className="text-xl font-black tracking-tight text-white uppercase">
-            Deep Game
+            DEEP GAME
           </h1>
         </div>
 
@@ -919,7 +886,7 @@ export default function App() {
               <Cpu className="w-5 h-5 text-[#00A3FF] hidden" />
             </div>
             <h1 className="text-lg font-black tracking-tight text-white uppercase">
-              Deep Game
+              DEEP GAME
             </h1>
           </div>
           <div className="relative group cursor-pointer">
@@ -1607,8 +1574,7 @@ export default function App() {
                           <button 
                             onClick={() => {
                               setEditingTarefa(tarefa);
-                              setEditTarefaData({ nome: tarefa.nome, pontos: tarefa.pontos, regras: tarefa.regras || '', imagem_url: tarefa.imagem_url || '' });
-                              setEditTarefaPreview(tarefa.imagem_url || null);
+                              setEditTarefaData({ nome: tarefa.nome, pontos: tarefa.pontos });
                             }}
                             className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
                             title="Editar"
@@ -1641,87 +1607,6 @@ export default function App() {
                         onChange={e => editingTarefa ? setEditTarefaData({...editTarefaData, nome: e.target.value}) : setNewTarefa({...newTarefa, nome: e.target.value})}
                         className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Nome da Missão"
-                      />
-                    </div>
-                    <div>
-                      <textarea 
-                        value={editingTarefa ? (editTarefaData as any).regras : newTarefa.regras}
-                        onChange={e => editingTarefa ? setEditTarefaData({...editTarefaData, regras: e.target.value} as any) : setNewTarefa({...newTarefa, regras: e.target.value})}
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
-                        placeholder="Regras da Missão"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Imagem da Missão</label>
-                      <div 
-                        className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors ${(editingTarefa ? editTarefaPreview : newTarefaPreview) ? 'border-[#00A3FF]' : 'border-white/10 hover:border-[#00A3FF]/50'}`}
-                        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-[#00A3FF]'); }}
-                        onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-[#00A3FF]'); }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          e.currentTarget.classList.remove('border-[#00A3FF]');
-                          const file = e.dataTransfer.files?.[0];
-                          if (file) {
-                            if (editingTarefa) {
-                              setEditTarefaFile(file);
-                              setEditTarefaPreview(URL.createObjectURL(file));
-                              setEditTarefaData({...editTarefaData, imagem_url: ''});
-                            } else {
-                              setNewTarefaFile(file);
-                              setNewTarefaPreview(URL.createObjectURL(file));
-                              setNewTarefa({...newTarefa, imagem_url: ''});
-                            }
-                          }
-                        }}
-                      >
-                        {(editingTarefa ? editTarefaPreview : newTarefaPreview) ? (
-                          <img src={(editingTarefa ? editTarefaPreview : newTarefaPreview) || ''} alt="Preview" className="w-full h-24 object-cover rounded-lg mb-2" />
-                        ) : (
-                          <div className="text-gray-500 text-xs py-4">
-                            Arraste uma imagem aqui ou clique para selecionar
-                          </div>
-                        )}
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              if (editingTarefa) {
-                                setEditTarefaFile(file);
-                                setEditTarefaPreview(URL.createObjectURL(file));
-                                setEditTarefaData({...editTarefaData, imagem_url: ''});
-                              } else {
-                                setNewTarefaFile(file);
-                                setNewTarefaPreview(URL.createObjectURL(file));
-                                setNewTarefa({...newTarefa, imagem_url: ''});
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#F5F5DC] file:text-[#00A3FF] hover:file:bg-[#E8E8C8] transition-colors cursor-pointer"
-                        />
-                      </div>
-                      <div className="mt-2 mb-2 flex items-center gap-2">
-                        <div className="h-px bg-gray-200 flex-1"></div>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">OU URL</span>
-                        <div className="h-px bg-gray-200 flex-1"></div>
-                      </div>
-                      <input 
-                        type="text" 
-                        value={editingTarefa ? (editTarefaData as any).imagem_url : newTarefa.imagem_url}
-                        onChange={e => {
-                          if (editingTarefa) {
-                            setEditTarefaData({...editTarefaData, imagem_url: e.target.value});
-                            setEditTarefaFile(null);
-                            setEditTarefaPreview(null);
-                          } else {
-                            setNewTarefa({...newTarefa, imagem_url: e.target.value});
-                            setNewTarefaFile(null);
-                            setNewTarefaPreview(null);
-                          }
-                        }}
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
-                        placeholder="URL da Imagem"
                       />
                     </div>
                     <div className="flex gap-3">

@@ -1,4 +1,4 @@
-# Deep Rewards - Deploy Guide
+# DEEP GAME - Deploy Guide
 
 Este projeto foi desenvolvido como uma Single Page Application (SPA) em React com Vite, utilizando **Cloudflare Pages** para hospedagem e **Supabase (PostgreSQL)** para o banco de dados.
 
