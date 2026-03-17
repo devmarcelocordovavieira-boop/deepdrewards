@@ -46,6 +46,29 @@ export default function App() {
   const [newProdutoFile, setNewProdutoFile] = useState<File | null>(null);
   const [newProdutoPreview, setNewProdutoPreview] = useState<string | null>(null);
 
+  // Debounce search state
+  const [searchUser, setSearchUser] = useState('');
+  const [debouncedSearchUser, setDebouncedSearchUser] = useState('');
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchUser(searchUser), 300);
+    return () => clearTimeout(timer);
+  }, [searchUser]);
+
+  // Cache helper for static/semi-static data
+  const fetchWithCache = async (key: string, fetchFn: () => Promise<any>, ttl = 300000) => {
+    const cached = sessionStorage.getItem(key);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < ttl) return data;
+    }
+    const data = await fetchFn();
+    if (data) {
+      sessionStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+    }
+    return data;
+  };
+
   // Auth forms state
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authEmail, setAuthEmail] = useState('');
@@ -180,7 +203,8 @@ export default function App() {
 
   const fetchUserData = async (userId: string) => {
     try {
-      const { data, error } = await supabase.from('usuarios').select('*').eq('id', userId).single();
+      // Optimization: Select only necessary fields
+      const { data, error } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo').eq('id', userId).single();
       if (error) {
         // If user is not found in the database (e.g., deleted), sign them out
         await supabase.auth.signOut();
@@ -192,7 +216,6 @@ export default function App() {
       });
       fetchAllData();
     } catch (error) {
-      console.error('Erro ao buscar usuário:', error);
       setCurrentUser(null);
     } finally {
       setIsLoading(false);
@@ -200,24 +223,29 @@ export default function App() {
   };
 
   const fetchAllData = async () => {
-    // Fetch users (Ranking based on pontos_acumulados)
-    const { data: usersData } = await supabase.from('usuarios').select('*').order('pontos_acumulados', { ascending: false });
+    // Fetch users (Ranking based on pontos_acumulados) - Optimization: Select only necessary fields
+    const { data: usersData } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo').order('pontos_acumulados', { ascending: false });
     if (usersData) {
       setUsers(usersData.map(u => ({ ...u, avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.nome}` })));
     }
 
-    // Fetch products
-    const { data: productsData } = await supabase.from('produtos').select('*').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
+    // Optimization: Cache products and tasks (Stale-While-Revalidate pattern)
+    const productsData = await fetchWithCache('cache_produtos', async () => {
+      const { data } = await supabase.from('produtos').select('id, nome, descricao, regras, preco_pontos, estoque, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
+      return data;
+    });
     if (productsData) setProducts(productsData);
 
-    // Fetch tasks
-    const { data: tarefasData } = await supabase.from('tipos_tarefas').select('*').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
+    const tarefasData = await fetchWithCache('cache_tarefas', async () => {
+      const { data } = await supabase.from('tipos_tarefas').select('id, nome, descricao, regras, pontos, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
+      return data;
+    });
     if (tarefasData) setTarefas(tarefasData);
 
     // Fetch submissions
     const { data: subData } = await supabase
       .from('submissoes')
-      .select('*, usuarios(nome), tipos_tarefas(nome, pontos)')
+      .select('id, usuario_id, tarefa_id, descricao, url_prova, status, data_envio, motivo_rejeicao, usuarios(nome), tipos_tarefas(nome, pontos)')
       .order('data_envio', { ascending: false });
       
     if (subData) {
@@ -240,7 +268,7 @@ export default function App() {
     // Fetch resgates
     const { data: resgatesData } = await supabase
       .from('resgates')
-      .select('*, usuarios(nome), produtos(nome, preco_pontos)')
+      .select('id, usuario_id, produto_id, data_resgate, usado, status, usuarios(nome), produtos(nome, preco_pontos)')
       .order('data_resgate', { ascending: false });
     if (resgatesData) {
       const mappedResgates = resgatesData.map((r: any) => ({
@@ -258,7 +286,7 @@ export default function App() {
     }
 
     // Fetch penalizacoes
-    const { data: penalizacoesData } = await supabase.from('penalizacoes').select('*').eq('lida', false);
+    const { data: penalizacoesData } = await supabase.from('penalizacoes').select('id, usuario_id, pontos, motivo, lida, created_at').eq('lida', false);
     if (penalizacoesData) setPenalizacoes(penalizacoesData);
   };
 
@@ -1338,7 +1366,7 @@ export default function App() {
                     >
                       <div className="flex items-center gap-4 z-10">
                         {tarefa.imagem_url ? (
-                          <img src={tarefa.imagem_url} alt={tarefa.nome} className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
+                          <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
                         ) : (
                           <div className="w-16 h-16 bg-[#00A3FF]/20 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-[#00A3FF]/30 shrink-0">
                             <Cpu className="w-8 h-8 text-[#00F0FF]" />
@@ -1556,7 +1584,7 @@ export default function App() {
                             <span className="font-bold text-gray-500 text-base">{index + 4}º</span>
                           </div>
                           
-                          <img src={user.avatar} alt={user.nome} className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover" />
+                          <img src={user.avatar} alt={user.nome} loading="lazy" className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover" />
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -1709,7 +1737,7 @@ export default function App() {
                           {sub.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
                             <video src={sub.url_prova} className="w-full h-full object-cover" controls />
                           ) : (
-                            <img src={sub.url_prova} alt="Evidência" className="w-full h-full object-cover" />
+                            <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
                           )}
                           <a href={sub.url_prova} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
                             Ampliar
@@ -1835,7 +1863,7 @@ export default function App() {
                             <GripVertical className="w-5 h-5" />
                           </div>
                           {tarefa.imagem_url ? (
-                            <img src={tarefa.imagem_url} alt={tarefa.nome} className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
+                            <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
                           ) : (
                             <div className="w-12 h-12 rounded-xl bg-[#050505] border border-white/10 flex items-center justify-center">
                               <Camera className="w-5 h-5 text-gray-600" />
@@ -2017,7 +2045,7 @@ export default function App() {
                           <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors">
                             <GripVertical className="w-5 h-5" />
                           </div>
-                          <img src={produto.imagem_url} alt={produto.nome} className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
+                          <img src={produto.imagem_url} alt={produto.nome} loading="lazy" className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
                           <div>
                             <p className="font-bold text-white text-sm">{produto.nome}</p>
                             <p className="text-xs text-[#00F0FF] font-bold">{produto.preco_pontos} pts • {produto.estoque} em estoque</p>
@@ -2228,18 +2256,28 @@ export default function App() {
             {/* GERENCIAMENTO DE USUÁRIOS (PENALIZAÇÕES) */}
             <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] overflow-hidden mt-8 relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#00A3FF]/10 blur-[50px] pointer-events-none"></div>
-              <div className="p-6 border-b border-white/10 bg-transparent relative z-10">
+              <div className="p-6 border-b border-white/10 bg-transparent relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
                   <Shield className="w-5 h-5 text-[#00F0FF]" /> Gerenciar Usuários
                 </h2>
+                <input 
+                  type="text" 
+                  placeholder="Buscar usuário..." 
+                  value={searchUser}
+                  onChange={(e) => setSearchUser(e.target.value)}
+                  className="w-full sm:w-64 bg-[#121212] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#00A3FF]/50 transition-colors"
+                />
               </div>
               
               <div className="p-4 relative z-10">
                 <div className="space-y-3">
-                  {users.filter(u => u.cargo !== 'admin').map(user => (
+                  {users
+                    .filter(u => u.cargo !== 'admin')
+                    .filter(u => u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase()))
+                    .map(user => (
                     <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] gap-4">
                       <div className="flex items-center gap-3">
-                        <img src={user.avatar} alt={user.nome} className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover" />
+                        <img src={user.avatar} alt={user.nome} loading="lazy" className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover" />
                         <div>
                           <p className="font-bold text-white">{user.nome}</p>
                           <p className="text-xs text-gray-500">{user.email}</p>
@@ -2271,6 +2309,9 @@ export default function App() {
                   ))}
                   {users.filter(u => u.cargo !== 'admin').length === 0 && (
                     <div className="p-8 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum usuário comum encontrado.</div>
+                  )}
+                  {users.filter(u => u.cargo !== 'admin').length > 0 && users.filter(u => u.cargo !== 'admin' && (u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase()))).length === 0 && (
+                    <div className="p-8 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum usuário corresponde à busca.</div>
                   )}
                 </div>
               </div>
