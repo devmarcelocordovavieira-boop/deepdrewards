@@ -430,6 +430,32 @@ export default function App() {
     }
   };
 
+  const handleAprovarResgate = async (resgate: any) => {
+    try {
+      const { error } = await supabase.from('resgates').update({ status: 'aprovado' }).eq('id', resgate.id);
+      if (error) throw error;
+      showNotification(`Resgate de ${resgate.produto_nome} aprovado!`, 'success');
+      fetchAllData();
+    } catch (error: any) {
+      showNotification(`Erro ao aprovar: ${error.message}`, 'error');
+    }
+  };
+
+  const handleRejeitarResgate = async (resgate: any) => {
+    try {
+      const { error } = await supabase.rpc('rejeitar_resgate', {
+        p_resgate_id: resgate.id,
+        p_usuario_id: resgate.usuario_id,
+        p_pontos: resgate.preco_pontos
+      });
+      if (error) throw error;
+      showNotification(`Resgate de ${resgate.produto_nome} rejeitado. Pontos devolvidos.`, 'success');
+      fetchAllData();
+    } catch (error: any) {
+      showNotification(`Erro ao rejeitar: ${error.message}`, 'error');
+    }
+  };
+
   const handleCreateTarefa = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTarefa.nome || newTarefa.pontos <= 0) return showNotification('Preencha nome e pontos válidos.', 'error');
@@ -1490,12 +1516,12 @@ export default function App() {
               </button>
             </div>
 
-            {/* FILA DE APROVAÇÃO */}
+            {/* FILA DE APROVAÇÃO DE MISSÕES */}
             <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] overflow-hidden mb-8 relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#00A3FF]/10 blur-[50px] pointer-events-none"></div>
               <div className="p-6 border-b border-white/10 bg-transparent relative z-10">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-[#00F0FF]" /> Fila de Avaliação
+                  <Camera className="w-5 h-5 text-[#00F0FF]" /> Fila de Avaliação de Missões
                 </h2>
               </div>
               
@@ -1538,6 +1564,54 @@ export default function App() {
                           </button>
                           <button 
                             onClick={() => handleRejeitar(sub)}
+                            className="flex-1 md:flex-none px-5 py-3 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20"
+                          >
+                            <XCircle className="w-4 h-4" /> Recusar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* FILA DE APROVAÇÃO DE PRÊMIOS */}
+            <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] overflow-hidden mb-8 relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#00A3FF]/10 blur-[50px] pointer-events-none"></div>
+              <div className="p-6 border-b border-white/10 bg-transparent relative z-10">
+                <h2 className="text-lg font-black text-white flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-[#00F0FF]" /> Fila de Avaliação de Prêmios
+                </h2>
+              </div>
+              
+              <div className="p-4 relative z-10">
+                {resgates.filter(r => r.status === 'pendente').length === 0 ? (
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4">
+                    <CheckCircle2 className="w-12 h-12 text-[#00A3FF]/30" />
+                    Nenhum resgate pendente. Tudo limpo! ✨
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {resgates.filter(r => r.status === 'pendente').map(resgate => (
+                      <div key={resgate.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-lg">{resgate.usuario_nome}</span>
+                            <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]">-{resgate.preco_pontos} pts</span>
+                          </div>
+                          <div className="text-sm font-bold text-gray-300">{resgate.produto_nome}</div>
+                        </div>
+                        
+                        <div className="flex gap-2 w-full md:w-auto md:flex-col">
+                          <button 
+                            onClick={() => handleAprovarResgate(resgate)}
+                            className="flex-1 md:flex-none px-5 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-emerald-500/20"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Aprovar
+                          </button>
+                          <button 
+                            onClick={() => handleRejeitarResgate(resgate)}
                             className="flex-1 md:flex-none px-5 py-3 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20"
                           >
                             <XCircle className="w-4 h-4" /> Recusar
