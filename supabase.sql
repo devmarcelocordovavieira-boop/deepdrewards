@@ -21,6 +21,7 @@ CREATE TABLE produtos (
   preco_pontos INTEGER NOT NULL CHECK (preco_pontos >= 0),
   estoque INTEGER NOT NULL DEFAULT 0 CHECK (estoque >= 0),
   imagem_url TEXT,
+  regras TEXT,
   ativo BOOLEAN DEFAULT true,
   ordem INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -28,6 +29,7 @@ CREATE TABLE produtos (
 
 -- Script to add ordem to existing table if needed
 ALTER TABLE produtos ADD COLUMN IF NOT EXISTS ordem INTEGER DEFAULT 0;
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS regras TEXT;
 
 -- Tabela de Resgates
 CREATE TABLE resgates (
@@ -45,9 +47,19 @@ CREATE TABLE tipos_tarefas (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL,
   pontos INTEGER NOT NULL CHECK (pontos > 0),
+  regras TEXT,
+  descricao TEXT,
+  imagem_url TEXT,
+  ordem INTEGER DEFAULT 0,
   ativo BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Script to add regras to existing table if needed
+ALTER TABLE tipos_tarefas ADD COLUMN IF NOT EXISTS regras TEXT;
+ALTER TABLE tipos_tarefas ADD COLUMN IF NOT EXISTS descricao TEXT;
+ALTER TABLE tipos_tarefas ADD COLUMN IF NOT EXISTS imagem_url TEXT;
+ALTER TABLE tipos_tarefas ADD COLUMN IF NOT EXISTS ordem INTEGER DEFAULT 0;
 
 -- Tabela de Submissões
 CREATE TABLE submissoes (
@@ -186,4 +198,8 @@ CREATE POLICY "Tarefas visíveis" ON tipos_tarefas FOR SELECT USING (ativo = tru
 
 -- Ranking visível para todos
 CREATE POLICY "Ranking visível" ON usuarios FOR SELECT USING (true);
+
+-- Mural visível para todos
+CREATE POLICY "Submissoes visiveis" ON submissoes FOR SELECT USING (true);
+CREATE POLICY "Resgates visiveis" ON resgates FOR SELECT USING (true);
 

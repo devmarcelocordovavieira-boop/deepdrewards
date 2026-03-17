@@ -32,14 +32,17 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [resgates, setResgates] = useState<any[]>([]);
   const [editingTarefa, setEditingTarefa] = useState<any | null>(null);
-  const [editTarefaData, setEditTarefaData] = useState({ nome: '', pontos: 0 });
+  const [editTarefaData, setEditTarefaData] = useState({ nome: '', descricao: '', regras: '', pontos: 0, imagem_url: '' });
   const [editingProduto, setEditingProduto] = useState<any | null>(null);
-  const [editProdutoData, setEditProdutoData] = useState({ nome: '', descricao: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
+  const [editProdutoData, setEditProdutoData] = useState({ nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
   const [draggedProdutoId, setDraggedProdutoId] = useState<string | null>(null);
+  const [draggedTarefaId, setDraggedTarefaId] = useState<string | null>(null);
 
   // Admin forms state
-  const [newTarefa, setNewTarefa] = useState({ nome: '', pontos: 0 });
-  const [newProduto, setNewProduto] = useState({ nome: '', descricao: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
+  const [newTarefa, setNewTarefa] = useState({ nome: '', descricao: '', regras: '', pontos: 0, imagem_url: '' });
+  const [newTarefaFile, setNewTarefaFile] = useState<File | null>(null);
+  const [newTarefaPreview, setNewTarefaPreview] = useState<string | null>(null);
+  const [newProduto, setNewProduto] = useState({ nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
   const [newProdutoFile, setNewProdutoFile] = useState<File | null>(null);
   const [newProdutoPreview, setNewProdutoPreview] = useState<string | null>(null);
 
@@ -177,7 +180,7 @@ export default function App() {
     if (productsData) setProducts(productsData);
 
     // Fetch tasks
-    const { data: tarefasData } = await supabase.from('tipos_tarefas').select('*').eq('ativo', true);
+    const { data: tarefasData } = await supabase.from('tipos_tarefas').select('*').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
     if (tarefasData) setTarefas(tarefasData);
 
     // Fetch submissions
@@ -462,13 +465,31 @@ export default function App() {
     if (!newTarefa.nome || newTarefa.pontos <= 0) return showNotification('Preencha nome e pontos válidos.', 'error');
     
     try {
+      let finalImageUrl = newTarefa.imagem_url || `https://picsum.photos/seed/${newTarefa.nome}/600/400`;
+      
+      if (newTarefaFile && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co') {
+        const fileExt = newTarefaFile.name.split('.').pop();
+        const fileName = `tarefa-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('provas_midia').upload(fileName, newTarefaFile);
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage.from('provas_midia').getPublicUrl(fileName);
+        finalImageUrl = publicUrlData.publicUrl;
+      }
+
       const { error } = await supabase.from('tipos_tarefas').insert([{
         nome: newTarefa.nome,
-        pontos: newTarefa.pontos
+        descricao: newTarefa.descricao,
+        pontos: newTarefa.pontos,
+        regras: newTarefa.regras,
+        imagem_url: finalImageUrl,
+        ordem: tarefas.length
       }]);
       if (error) throw error;
       
-      setNewTarefa({ nome: '', pontos: 0 });
+      setNewTarefa({ nome: '', descricao: '', regras: '', pontos: 0, imagem_url: '' });
+      setNewTarefaFile(null);
+      setNewTarefaPreview(null);
       showNotification('Missão criada com sucesso!', 'success');
       fetchAllData();
     } catch (error: any) {
@@ -498,6 +519,7 @@ export default function App() {
       const { error } = await supabase.from('produtos').insert([{
         nome: newProduto.nome,
         descricao: newProduto.descricao,
+        regras: newProduto.regras,
         preco_pontos: newProduto.preco_pontos,
         estoque: newProduto.estoque,
         imagem_url: finalImageUrl,
@@ -505,7 +527,7 @@ export default function App() {
       }]);
       if (error) throw error;
 
-      setNewProduto({ nome: '', descricao: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
+      setNewProduto({ nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
       setNewProdutoFile(null);
       setNewProdutoPreview(null);
       showNotification('Prêmio adicionado ao catálogo!', 'success');
@@ -520,14 +542,31 @@ export default function App() {
     if (!editTarefaData.nome || editTarefaData.pontos <= 0 || !editingTarefa) return showNotification('Preencha nome e pontos válidos.', 'error');
     
     try {
+      let finalImageUrl = editTarefaData.imagem_url;
+      
+      if (newTarefaFile && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co') {
+        const fileExt = newTarefaFile.name.split('.').pop();
+        const fileName = `tarefa-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('provas_midia').upload(fileName, newTarefaFile);
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage.from('provas_midia').getPublicUrl(fileName);
+        finalImageUrl = publicUrlData.publicUrl;
+      }
+
       const { error } = await supabase.from('tipos_tarefas').update({
         nome: editTarefaData.nome,
-        pontos: editTarefaData.pontos
+        descricao: editTarefaData.descricao,
+        pontos: editTarefaData.pontos,
+        regras: editTarefaData.regras,
+        imagem_url: finalImageUrl
       }).eq('id', editingTarefa.id);
       if (error) throw error;
       
       setEditingTarefa(null);
-      setEditTarefaData({ nome: '', pontos: 0 });
+      setEditTarefaData({ nome: '', descricao: '', regras: '', pontos: 0, imagem_url: '' });
+      setNewTarefaFile(null);
+      setNewTarefaPreview(null);
       showNotification('Missão atualizada com sucesso!', 'success');
       fetchAllData();
     } catch (error: any) {
@@ -555,6 +594,7 @@ export default function App() {
       const { error } = await supabase.from('produtos').update({
         nome: editProdutoData.nome,
         descricao: editProdutoData.descricao,
+        regras: editProdutoData.regras,
         preco_pontos: editProdutoData.preco_pontos,
         estoque: editProdutoData.estoque,
         imagem_url: finalImageUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=2000&auto=format&fit=crop'
@@ -563,7 +603,7 @@ export default function App() {
       if (error) throw error;
       
       setEditingProduto(null);
-      setEditProdutoData({ nome: '', descricao: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
+      setEditProdutoData({ nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
       setNewProdutoFile(null);
       setNewProdutoPreview(null);
       showNotification('Prêmio atualizado com sucesso!', 'success');
@@ -594,6 +634,35 @@ export default function App() {
       fetchAllData();
     } catch (error: any) {
       showNotification(`Erro: ${error.message}`, 'error');
+    }
+  };
+
+  const handleReorderTarefas = async (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+
+    const draggedIndex = tarefas.findIndex(t => t.id === draggedId);
+    const targetIndex = tarefas.findIndex(t => t.id === targetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newTarefas = [...tarefas];
+    const [draggedItem] = newTarefas.splice(draggedIndex, 1);
+    newTarefas.splice(targetIndex, 0, draggedItem);
+
+    // Optimistic update
+    setTarefas(newTarefas);
+
+    try {
+      // Update 'ordem' for all affected items
+      for (let i = 0; i < newTarefas.length; i++) {
+        const t = newTarefas[i];
+        if (t.ordem !== i) {
+          await supabase.from('tipos_tarefas').update({ ordem: i }).eq('id', t.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error reordering tarefas:', error);
+      fetchAllData(); // Revert on error
     }
   };
 
@@ -1025,7 +1094,8 @@ export default function App() {
                             </div>
                             <div className="p-5 flex flex-col flex-1">
                               <h3 className="text-lg font-bold text-white leading-tight mb-1">{produto.nome}</h3>
-                              <p className="text-sm text-gray-400 mb-4 line-clamp-2">{produto.descricao}</p>
+                              <p className="text-sm text-gray-400 mb-2 line-clamp-2">{produto.descricao}</p>
+                              {produto.regras && <p className="text-xs text-[#00A3FF] mb-4 font-medium">Regras: {produto.regras}</p>}
                               
                               <div className="flex items-center gap-2 mb-6">
                                 <span className="text-xs font-bold px-2.5 py-1 bg-white/5 text-gray-400 rounded-md border border-white/5">
@@ -1081,7 +1151,8 @@ export default function App() {
                               </div>
                               <div className="p-5 flex flex-col flex-1">
                                 <h3 className="text-lg font-bold text-gray-300 leading-tight mb-1">{produto.nome}</h3>
-                                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{produto.descricao}</p>
+                                <p className="text-sm text-gray-500 mb-2 line-clamp-2">{produto.descricao}</p>
+                                {produto.regras && <p className="text-xs text-[#00A3FF]/70 mb-4 font-medium">Regras: {produto.regras}</p>}
                                 
                                 {!isOutOfStock && (
                                   <div className="mb-6 space-y-2">
@@ -1163,21 +1234,27 @@ export default function App() {
                     <div 
                       key={tarefa.id} 
                       onClick={() => setSelectedTarefa(tarefa.id)}
-                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group"
+                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-[#00A3FF]/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform border border-[#00A3FF]/30">
-                          <Cpu className="w-7 h-7 text-[#00F0FF]" />
-                        </div>
+                      <div className="flex items-center gap-4 z-10">
+                        {tarefa.imagem_url ? (
+                          <img src={tarefa.imagem_url} alt={tarefa.nome} className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
+                        ) : (
+                          <div className="w-16 h-16 bg-[#00A3FF]/20 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-[#00A3FF]/30 shrink-0">
+                            <Cpu className="w-8 h-8 text-[#00F0FF]" />
+                          </div>
+                        )}
                         <div>
                           <h3 className="font-bold text-white text-lg">{tarefa.nome}</h3>
-                          <div className="flex items-center gap-1 mt-1">
+                          {tarefa.descricao && <p className="text-sm text-gray-400 mt-0.5 line-clamp-2">{tarefa.descricao}</p>}
+                          {tarefa.regras && <p className="text-xs text-[#00A3FF] mt-1 font-medium">Regras: {tarefa.regras}</p>}
+                          <div className="flex items-center gap-1 mt-2">
                             <Star className="w-4 h-4 text-[#00F0FF] fill-[#00F0FF]" />
-                            <span className="text-sm font-bold text-[#00F0FF]">+{tarefa.pontos} pts</span>
+                            <span className="text-sm font-black text-[#00F0FF]">+{tarefa.pontos} pts</span>
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors" />
+                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10" />
                     </div>
                   ))}
                 </div>
@@ -1374,7 +1451,7 @@ export default function App() {
                   <div className="bg-[#121212] rounded-[2rem] shadow-sm border border-white/5 overflow-hidden p-2">
                     <div className="divide-y divide-white/5">
                       {rest.map((user, index) => (
-                        <div key={user.id} className={`flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentUser?.id === user.id ? 'bg-[#00A3FF]/10 border border-[#00A3FF]/20' : 'hover:bg-white/5'}`}>
+                        <div key={user.id} className="flex items-center gap-4 p-4 rounded-2xl transition-colors hover:bg-white/5">
                           <div className="w-8 flex justify-center">
                             <span className="font-bold text-gray-500 text-base">{index + 4}º</span>
                           </div>
@@ -1402,23 +1479,6 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-
-                  {/* CURRENT USER STICKY BAR (if not in top 3 and not visible in the list easily) */}
-                  {currentUser && currentUserRank > 3 && (
-                    <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-auto md:w-full md:max-w-2xl mx-auto bg-[#1A1A1A] border border-[#00A3FF]/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] rounded-2xl p-4 flex items-center gap-4 z-40 animate-in slide-in-from-bottom-8">
-                      <div className="w-8 flex justify-center">
-                        <span className="font-black text-[#00F0FF] text-lg">{currentUserRank}º</span>
-                      </div>
-                      <img src={currentUser.avatar} alt={currentUser.nome} className="w-10 h-10 rounded-full border border-[#00A3FF]/50 object-cover" />
-                      <div className="flex-1 min-w-0">
-                        <span className="font-bold text-white text-base truncate">Você</span>
-                      </div>
-                      <div className="text-right flex items-center gap-1.5 bg-[#00A3FF]/20 px-3 py-1.5 rounded-full border border-[#00A3FF]/30">
-                        <Star className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
-                        <span className="font-black text-[#00F0FF] text-sm">{currentUser.pontos_acumulados || currentUser.pontos || 0}</span>
-                      </div>
-                    </div>
-                  )}
                 </>
               );
             })()}
@@ -1640,16 +1700,65 @@ export default function App() {
                     <p className="text-sm text-gray-500 text-center py-4">Nenhuma missão cadastrada.</p>
                   ) : (
                     tarefas.map(tarefa => (
-                      <div key={tarefa.id} className="flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]">
-                        <div>
-                          <p className="font-bold text-white text-sm">{tarefa.nome}</p>
-                          <p className="text-xs text-[#00F0FF] font-bold">{tarefa.pontos} pts</p>
+                      <div 
+                        key={tarefa.id} 
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedTarefaId(tarefa.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                          setTimeout(() => {
+                            if (e.target instanceof HTMLElement) {
+                              e.target.classList.add('opacity-50');
+                            }
+                          }, 0);
+                        }}
+                        onDragEnd={(e) => {
+                          setDraggedTarefaId(null);
+                          if (e.target instanceof HTMLElement) {
+                            e.target.classList.remove('opacity-50');
+                          }
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedTarefaId && draggedTarefaId !== tarefa.id) {
+                            handleReorderTarefas(draggedTarefaId, tarefa.id);
+                          }
+                        }}
+                        className={`flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] ${draggedTarefaId === tarefa.id ? 'opacity-50' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors">
+                            <GripVertical className="w-5 h-5" />
+                          </div>
+                          {tarefa.imagem_url ? (
+                            <img src={tarefa.imagem_url} alt={tarefa.nome} className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-[#050505] border border-white/10 flex items-center justify-center">
+                              <Camera className="w-5 h-5 text-gray-600" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-bold text-white text-sm">{tarefa.nome}</p>
+                            <p className="text-xs text-[#00F0FF] font-bold">{tarefa.pontos} pts</p>
+                          </div>
                         </div>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => {
                               setEditingTarefa(tarefa);
-                              setEditTarefaData({ nome: tarefa.nome, pontos: tarefa.pontos });
+                              setEditTarefaData({ 
+                                nome: tarefa.nome, 
+                                descricao: tarefa.descricao || '',
+                                regras: tarefa.regras || '',
+                                pontos: tarefa.pontos, 
+                                imagem_url: tarefa.imagem_url || '' 
+                              });
+                              setNewTarefaPreview(tarefa.imagem_url || null);
+                              setNewTarefaFile(null);
                             }}
                             className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
                             title="Editar"
@@ -1684,6 +1793,22 @@ export default function App() {
                         placeholder="Nome da Missão"
                       />
                     </div>
+                    <div>
+                      <textarea 
+                        value={editingTarefa ? editTarefaData.descricao : newTarefa.descricao}
+                        onChange={e => editingTarefa ? setEditTarefaData({...editTarefaData, descricao: e.target.value}) : setNewTarefa({...newTarefa, descricao: e.target.value})}
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600 min-h-[80px] resize-none"
+                        placeholder="Descrição da Missão"
+                      />
+                    </div>
+                    <div>
+                      <textarea 
+                        value={editingTarefa ? editTarefaData.regras : newTarefa.regras}
+                        onChange={e => editingTarefa ? setEditTarefaData({...editTarefaData, regras: e.target.value}) : setNewTarefa({...newTarefa, regras: e.target.value})}
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600 min-h-[80px] resize-none"
+                        placeholder="Regras"
+                      />
+                    </div>
                     <div className="flex gap-3">
                       <input 
                         type="number" 
@@ -1692,13 +1817,48 @@ export default function App() {
                         className="w-1/3 bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Pontos"
                       />
+                      <div className="flex-1 flex items-center gap-3">
+                        {newTarefaPreview && (
+                          newTarefaFile?.type.startsWith('video/') ? (
+                            <video src={newTarefaPreview} className="w-10 h-10 rounded-lg object-cover border border-white/10 flex-shrink-0" controls />
+                          ) : (
+                            <img src={newTarefaPreview} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-white/10 flex-shrink-0" />
+                          )
+                        )}
+                        <div className="flex-1">
+                          <input 
+                            type="file" 
+                            accept="image/*,video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setNewTarefaFile(file);
+                                setNewTarefaPreview(URL.createObjectURL(file));
+                                if (editingTarefa) {
+                                  setEditTarefaData({...editTarefaData, imagem_url: ''});
+                                } else {
+                                  setNewTarefa({...newTarefa, imagem_url: ''});
+                                }
+                              }
+                            }}
+                            className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#00A3FF]/10 file:text-[#00F0FF] hover:file:bg-[#00A3FF]/20 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
                       <button type="submit" className="flex-1 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#0077CC] transition-colors text-sm shadow-md shadow-[#00A3FF]/20">
                         {editingTarefa ? 'Salvar' : 'Adicionar'}
                       </button>
                       {editingTarefa && (
                         <button 
                           type="button" 
-                          onClick={() => { setEditingTarefa(null); setEditTarefaData({nome: '', pontos: 0}); }}
+                          onClick={() => { 
+                            setEditingTarefa(null); 
+                            setEditTarefaData({nome: '', descricao: '', regras: '', pontos: 0, imagem_url: ''}); 
+                            setNewTarefaFile(null);
+                            setNewTarefaPreview(null);
+                          }}
                           className="px-4 py-3 bg-white/5 text-gray-400 rounded-xl font-bold hover:bg-white/10 transition-colors text-sm border border-white/10"
                         >
                           Cancelar
@@ -1770,6 +1930,7 @@ export default function App() {
                               setEditProdutoData({ 
                                 nome: produto.nome, 
                                 descricao: produto.descricao || '', 
+                                regras: produto.regras || '',
                                 preco_pontos: produto.preco_pontos, 
                                 estoque: produto.estoque, 
                                 imagem_url: produto.imagem_url 
@@ -1808,6 +1969,22 @@ export default function App() {
                         onChange={e => editingProduto ? setEditProdutoData({...editProdutoData, nome: e.target.value}) : setNewProduto({...newProduto, nome: e.target.value})}
                         className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600"
                         placeholder="Nome do Prêmio"
+                      />
+                    </div>
+                    <div>
+                      <textarea 
+                        value={editingProduto ? editProdutoData.descricao : newProduto.descricao}
+                        onChange={e => editingProduto ? setEditProdutoData({...editProdutoData, descricao: e.target.value}) : setNewProduto({...newProduto, descricao: e.target.value})}
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600 min-h-[80px] resize-none"
+                        placeholder="Descrição do Prêmio"
+                      />
+                    </div>
+                    <div>
+                      <textarea 
+                        value={editingProduto ? editProdutoData.regras : newProduto.regras}
+                        onChange={e => editingProduto ? setEditProdutoData({...editProdutoData, regras: e.target.value}) : setNewProduto({...newProduto, regras: e.target.value})}
+                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-3 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/50 focus:border-transparent transition-colors text-sm placeholder-gray-600 min-h-[80px] resize-none"
+                        placeholder="Regras"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
