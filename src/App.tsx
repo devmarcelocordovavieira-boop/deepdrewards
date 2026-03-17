@@ -217,7 +217,8 @@ export default function App() {
         produto_nome: r.produtos?.nome || 'Produto',
         preco_pontos: r.produtos?.preco_pontos || 0,
         data_resgate: r.data_resgate,
-        usado: r.usado
+        usado: r.usado,
+        status: r.status
       }));
       setResgates(mappedResgates);
     }
