@@ -1686,16 +1686,16 @@ export default function App() {
             </section>
 
             {/* GERENCIAMENTO DE CATÁLOGO E MISSÕES */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-8">
               {/* GERENCIAR MISSÕES */}
-              <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 p-6 flex flex-col h-[600px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] relative overflow-hidden">
+              <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 p-6 flex flex-col shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#00A3FF]/10 blur-[40px] pointer-events-none"></div>
                 <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0 relative z-10">
                   <Cpu className="w-5 h-5 text-[#00F0FF]" /> Gerenciar Missões
                 </h2>
                 
                 {/* Lista de Missões Existentes */}
-                <div className="flex-1 overflow-y-auto pr-2 mb-6 space-y-3 custom-scrollbar">
+                <div className="max-h-[400px] overflow-y-auto pr-2 mb-6 space-y-3 custom-scrollbar">
                   {tarefas.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">Nenhuma missão cadastrada.</p>
                   ) : (
@@ -1847,7 +1847,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="flex-1 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#0077CC] transition-colors text-sm shadow-md shadow-[#00A3FF]/20">
+                      <button type="submit" className="flex-1 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#00F0FF] hover:text-[#0A0A0A] transition-colors text-sm shadow-[0_0_15px_rgba(0,163,255,0.3)]">
                         {editingTarefa ? 'Salvar' : 'Adicionar'}
                       </button>
                       {editingTarefa && (
@@ -1870,14 +1870,14 @@ export default function App() {
               </section>
 
               {/* GERENCIAR PRÊMIOS */}
-              <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 p-6 flex flex-col h-[600px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] relative overflow-hidden">
+              <section className="bg-[#0A0A0A]/80 backdrop-blur-xl rounded-[2rem] border border-white/10 p-6 flex flex-col shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#00A3FF]/10 blur-[40px] pointer-events-none"></div>
                 <h2 className="text-lg font-black text-white flex items-center gap-2 mb-6 flex-shrink-0 relative z-10">
                   <Gift className="w-5 h-5 text-[#00F0FF]" /> Gerenciar Prêmios
                 </h2>
                 
                 {/* Lista de Prêmios Existentes */}
-                <div className="flex-1 overflow-y-auto pr-2 mb-6 space-y-3 custom-scrollbar">
+                <div className="max-h-[400px] overflow-y-auto pr-2 mb-6 space-y-3 custom-scrollbar">
                   {products.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">Nenhum prêmio cadastrado.</p>
                   ) : (
@@ -2054,7 +2054,7 @@ export default function App() {
                       />
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors text-sm">
+                      <button type="submit" className="flex-1 py-3 bg-[#00A3FF] text-white rounded-xl font-bold hover:bg-[#00F0FF] hover:text-[#0A0A0A] transition-colors text-sm shadow-[0_0_15px_rgba(0,163,255,0.3)]">
                         {editingProduto ? 'Salvar' : 'Adicionar'}
                       </button>
                       {editingProduto && (
@@ -2062,11 +2062,11 @@ export default function App() {
                           type="button" 
                           onClick={() => { 
                             setEditingProduto(null); 
-                            setEditProdutoData({nome: '', descricao: '', preco_pontos: 0, estoque: 0, imagem_url: ''}); 
+                            setEditProdutoData({nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: ''}); 
                             setNewProdutoPreview(null);
                             setNewProdutoFile(null);
                           }}
-                          className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors text-sm"
+                          className="px-4 py-3 bg-white/5 text-gray-400 rounded-xl font-bold hover:bg-white/10 transition-colors text-sm border border-white/10"
                         >
                           Cancelar
                         </button>
