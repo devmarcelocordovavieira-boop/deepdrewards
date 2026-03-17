@@ -1039,23 +1039,59 @@ export default function App() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         {/* MOBILE HEADER */}
-        <header className="md:hidden bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-[0_4px_24px_rgba(0,163,255,0.05)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
-              <Cpu className="w-5 h-5 text-[#00A3FF] hidden" />
+        <header className="md:hidden bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3 flex flex-col gap-3 shadow-[0_4px_24px_rgba(0,163,255,0.05)]">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+                <Cpu className="w-5 h-5 text-[#00A3FF] hidden" />
+              </div>
+              <h1 className="text-lg font-black tracking-tight text-white uppercase">
+                DEEP GAME
+              </h1>
             </div>
-            <h1 className="text-lg font-black tracking-tight text-white uppercase">
-              DEEP GAME
-            </h1>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowRankingsModal(true)} className="text-gray-500 hover:text-white transition-colors" title="Ver todos os rankings">
+                <Info className="w-5 h-5" />
+              </button>
+              <div className="relative group cursor-pointer">
+                <img src={currentUser.avatar} alt="Avatar" className={`w-8 h-8 rounded-full bg-black/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                  <Camera className="w-3 h-3 text-white" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                </label>
+              </div>
+            </div>
           </div>
-          <div className="relative group cursor-pointer">
-            <img src={currentUser.avatar} alt="Avatar" className="w-8 h-8 rounded-full bg-black/50 border border-white/20 object-cover" />
-            <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-              <Camera className="w-3 h-3 text-white" />
-              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-            </label>
-          </div>
+          
+          {/* Progress Bar Mobile */}
+          {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
+            <div className="w-full">
+              <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
+                <div className={`flex items-center gap-1 font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
+                  <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
+                  <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+                </div>
+                <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
+              </div>
+              <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
+                <div 
+                  className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out`}
+                  style={{ 
+                    width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
+                    backgroundColor: 'currentColor',
+                    color: getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '') === 'white/60' ? '#9ca3af' : 
+                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'cyan' ? '#22d3ee' :
+                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'yellow' ? '#facc15' :
+                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
+                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
+                  }}
+                >
+                  <div className="absolute inset-0 bg-white/20"></div>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* NOTIFICATION */}
