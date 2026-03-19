@@ -23,7 +23,6 @@ export default function App() {
   const [penalizacoes, setPenalizacoes] = useState<any[]>([]);
   const [notification, setNotification] = useState<{msg: string, type: 'success'|'error'} | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [filtroMissoes, setFiltroMissoes] = useState<'disponiveis' | 'pendentes' | 'aprovadas' | 'rejeitadas' | 'todas'>('disponiveis');
 
   // Form states
   const [selectedTarefa, setSelectedTarefa] = useState('');
@@ -1361,50 +1360,17 @@ export default function App() {
             {!selectedTarefa ? (
               <>
                 <div className="text-center mb-8">
-                  <h1 className="text-3xl font-black text-white tracking-tight">Missões</h1>
+                  <h1 className="text-3xl font-black text-white tracking-tight">Missões Disponíveis</h1>
                   <p className="text-gray-400 mt-2 font-medium">Escolha uma missão, envie a prova e ganhe pontos!</p>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
-                  <button onClick={() => setFiltroMissoes('disponiveis')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'disponiveis' ? 'bg-[#00A3FF] text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Disponíveis</button>
-                  <button onClick={() => setFiltroMissoes('pendentes')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'pendentes' ? 'bg-yellow-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Pendentes</button>
-                  <button onClick={() => setFiltroMissoes('aprovadas')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'aprovadas' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Aprovadas</button>
-                  <button onClick={() => setFiltroMissoes('rejeitadas')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'rejeitadas' ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Rejeitadas</button>
-                  <button onClick={() => setFiltroMissoes('todas')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'todas' ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Todas</button>
-                </div>
-
                 <div className="space-y-4">
-                  {tarefas.filter(t => {
-                    if (t.ativo === false) return false;
-                    const userSub = submissoes.find(s => s.usuario_id === currentUser?.id && s.tarefa_id === t.id);
-                    if (filtroMissoes === 'disponiveis') return !userSub;
-                    if (filtroMissoes === 'pendentes') return userSub?.status === 'pendente';
-                    if (filtroMissoes === 'aprovadas') return userSub?.status === 'aprovado';
-                    if (filtroMissoes === 'rejeitadas') return userSub?.status === 'rejeitado';
-                    return true;
-                  }).map(tarefa => {
-                    const userSub = submissoes.find(s => s.usuario_id === currentUser?.id && s.tarefa_id === tarefa.id);
-                    return (
+                  {tarefas.filter(t => t.ativo !== false).map(tarefa => (
                     <div 
                       key={tarefa.id} 
-                      onClick={() => {
-                        if (userSub?.status === 'aprovado' || userSub?.status === 'pendente') {
-                          showNotification('Você já enviou esta missão.', 'error');
-                          return;
-                        }
-                        setSelectedTarefa(tarefa.id);
-                      }}
-                      className={`bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative ${userSub?.status === 'aprovado' || userSub?.status === 'pendente' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      onClick={() => setSelectedTarefa(tarefa.id)}
+                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative"
                     >
-                      {userSub && (
-                        <div className={`absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold border ${
-                          userSub.status === 'aprovado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                          userSub.status === 'rejeitado' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                          'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                        }`}>
-                          {userSub.status.toUpperCase()}
-                        </div>
-                      )}
                       <div className="flex items-center gap-4 z-10">
                         {tarefa.imagem_url ? (
                           <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
@@ -1414,7 +1380,7 @@ export default function App() {
                           </div>
                         )}
                         <div>
-                          <h3 className="font-bold text-white text-lg pr-16">{tarefa.nome}</h3>
+                          <h3 className="font-bold text-white text-lg">{tarefa.nome}</h3>
                           {tarefa.descricao && <p className="text-sm text-gray-400 mt-0.5 line-clamp-2">{tarefa.descricao}</p>}
                           {tarefa.regras && <p className="text-xs text-[#00A3FF] mt-1 font-medium">Regras: {tarefa.regras}</p>}
                           <div className="flex items-center gap-1 mt-2">
@@ -1423,9 +1389,9 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10 hidden sm:block" />
+                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10" />
                     </div>
-                  )})}
+                  ))}
                 </div>
 
                 {/* MINHAS MISSÕES */}
