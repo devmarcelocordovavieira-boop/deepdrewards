@@ -23,6 +23,7 @@ export default function App() {
   const [penalizacoes, setPenalizacoes] = useState<any[]>([]);
   const [notification, setNotification] = useState<{msg: string, type: 'success'|'error'} | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [filtroMissoes, setFiltroMissoes] = useState<'disponiveis' | 'pendentes' | 'aprovadas' | 'rejeitadas' | 'todas'>('disponiveis');
 
   // Form states
   const [selectedTarefa, setSelectedTarefa] = useState('');
@@ -37,6 +38,23 @@ export default function App() {
   const [editProdutoData, setEditProdutoData] = useState({ nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
   const [draggedProdutoId, setDraggedProdutoId] = useState<string | null>(null);
   const [draggedTarefaId, setDraggedTarefaId] = useState<string | null>(null);
+
+  // Global paste handler for images
+  React.useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      if (e.clipboardData?.files?.length) {
+        const file = e.clipboardData.files[0];
+        if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+          if (activeTab === 'enviar' && selectedTarefa) {
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+          }
+        }
+      }
+    };
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [activeTab, selectedTarefa]);
 
   // Admin forms state
   const [newTarefa, setNewTarefa] = useState({ nome: '', descricao: '', regras: '', pontos: 0, imagem_url: '' });
@@ -54,20 +72,6 @@ export default function App() {
     const timer = setTimeout(() => setDebouncedSearchUser(searchUser), 300);
     return () => clearTimeout(timer);
   }, [searchUser]);
-
-  // Cache helper for static/semi-static data
-  const fetchWithCache = async (key: string, fetchFn: () => Promise<any>, ttl = 300000) => {
-    const cached = sessionStorage.getItem(key);
-    if (cached) {
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < ttl) return data;
-    }
-    const data = await fetchFn();
-    if (data) {
-      sessionStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
-    }
-    return data;
-  };
 
   // Auth forms state
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -229,17 +233,12 @@ export default function App() {
       setUsers(usersData.map(u => ({ ...u, avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.nome}` })));
     }
 
-    // Optimization: Cache products and tasks (Stale-While-Revalidate pattern)
-    const productsData = await fetchWithCache('cache_produtos', async () => {
-      const { data } = await supabase.from('produtos').select('id, nome, descricao, regras, preco_pontos, estoque, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
-      return data;
-    });
+    // Fetch products
+    const { data: productsData } = await supabase.from('produtos').select('id, nome, descricao, regras, preco_pontos, estoque, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
     if (productsData) setProducts(productsData);
 
-    const tarefasData = await fetchWithCache('cache_tarefas', async () => {
-      const { data } = await supabase.from('tipos_tarefas').select('id, nome, descricao, regras, pontos, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
-      return data;
-    });
+    // Fetch tasks
+    const { data: tarefasData } = await supabase.from('tipos_tarefas').select('id, nome, descricao, regras, pontos, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
     if (tarefasData) setTarefas(tarefasData);
 
     // Fetch submissions
@@ -440,13 +439,22 @@ export default function App() {
         finalUrl = previewUrl || '';
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('Usuário não autenticado.');
+
       const { error: insertError } = await supabase.from('submissoes').insert([{
-        usuario_id: currentUser.id,
+        usuario_id: session.user.id,
         tarefa_id: selectedTarefa,
         descricao,
         url_prova: finalUrl
       }]);
-      if (insertError) throw insertError;
+      
+      if (insertError) {
+        if (insertError.message.includes('row-level security') || insertError.code === '42501') {
+          throw new Error('Você já enviou esta missão ou não tem permissão.');
+        }
+        throw insertError;
+      }
 
       setSelectedTarefa('');
       setDescricao('');
@@ -1011,7 +1019,7 @@ export default function App() {
                     <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
                     <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
                   </div>
-                  <button onClick={() => setShowRankingsModal(true)} className="text-gray-500 hover:text-white transition-colors" title="Ver todos os rankings">
+                  <button type="button" onClick={() => setShowRankingsModal(true)} className="p-2 -m-2 text-gray-500 hover:text-white transition-colors cursor-pointer" title="Ver todos os rankings">
                     <Info className="w-4 h-4" />
                   </button>
                 </div>
@@ -1079,7 +1087,7 @@ export default function App() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setShowRankingsModal(true)} className="text-gray-500 hover:text-white transition-colors" title="Ver todos os rankings">
+              <button type="button" onClick={() => setShowRankingsModal(true)} className="p-2 -m-2 text-gray-500 hover:text-white transition-colors cursor-pointer" title="Ver todos os rankings">
                 <Info className="w-5 h-5" />
               </button>
               <div className="relative group cursor-pointer">
@@ -1353,17 +1361,50 @@ export default function App() {
             {!selectedTarefa ? (
               <>
                 <div className="text-center mb-8">
-                  <h1 className="text-3xl font-black text-white tracking-tight">Missões Disponíveis</h1>
+                  <h1 className="text-3xl font-black text-white tracking-tight">Missões</h1>
                   <p className="text-gray-400 mt-2 font-medium">Escolha uma missão, envie a prova e ganhe pontos!</p>
                 </div>
                 
+                <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+                  <button onClick={() => setFiltroMissoes('disponiveis')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'disponiveis' ? 'bg-[#00A3FF] text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Disponíveis</button>
+                  <button onClick={() => setFiltroMissoes('pendentes')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'pendentes' ? 'bg-yellow-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Pendentes</button>
+                  <button onClick={() => setFiltroMissoes('aprovadas')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'aprovadas' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Aprovadas</button>
+                  <button onClick={() => setFiltroMissoes('rejeitadas')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'rejeitadas' ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Rejeitadas</button>
+                  <button onClick={() => setFiltroMissoes('todas')} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filtroMissoes === 'todas' ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>Todas</button>
+                </div>
+
                 <div className="space-y-4">
-                  {tarefas.filter(t => t.ativo !== false).map(tarefa => (
+                  {tarefas.filter(t => {
+                    if (t.ativo === false) return false;
+                    const userSub = submissoes.find(s => s.usuario_id === currentUser?.id && s.tarefa_id === t.id);
+                    if (filtroMissoes === 'disponiveis') return !userSub;
+                    if (filtroMissoes === 'pendentes') return userSub?.status === 'pendente';
+                    if (filtroMissoes === 'aprovadas') return userSub?.status === 'aprovado';
+                    if (filtroMissoes === 'rejeitadas') return userSub?.status === 'rejeitado';
+                    return true;
+                  }).map(tarefa => {
+                    const userSub = submissoes.find(s => s.usuario_id === currentUser?.id && s.tarefa_id === tarefa.id);
+                    return (
                     <div 
                       key={tarefa.id} 
-                      onClick={() => setSelectedTarefa(tarefa.id)}
-                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative"
+                      onClick={() => {
+                        if (userSub?.status === 'aprovado' || userSub?.status === 'pendente') {
+                          showNotification('Você já enviou esta missão.', 'error');
+                          return;
+                        }
+                        setSelectedTarefa(tarefa.id);
+                      }}
+                      className={`bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative ${userSub?.status === 'aprovado' || userSub?.status === 'pendente' ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
+                      {userSub && (
+                        <div className={`absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold border ${
+                          userSub.status === 'aprovado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                          userSub.status === 'rejeitado' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                          'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                        }`}>
+                          {userSub.status.toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex items-center gap-4 z-10">
                         {tarefa.imagem_url ? (
                           <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
@@ -1373,7 +1414,7 @@ export default function App() {
                           </div>
                         )}
                         <div>
-                          <h3 className="font-bold text-white text-lg">{tarefa.nome}</h3>
+                          <h3 className="font-bold text-white text-lg pr-16">{tarefa.nome}</h3>
                           {tarefa.descricao && <p className="text-sm text-gray-400 mt-0.5 line-clamp-2">{tarefa.descricao}</p>}
                           {tarefa.regras && <p className="text-xs text-[#00A3FF] mt-1 font-medium">Regras: {tarefa.regras}</p>}
                           <div className="flex items-center gap-1 mt-2">
@@ -1382,9 +1423,9 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10" />
+                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10 hidden sm:block" />
                     </div>
-                  ))}
+                  )})}
                 </div>
 
                 {/* MINHAS MISSÕES */}
@@ -2338,8 +2379,14 @@ export default function App() {
       
       {/* Rankings Modal */}
       {showRankingsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setShowRankingsModal(false)}
+        >
+          <div 
+            className="bg-[#0A0A0A] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#00A3FF]/20 to-transparent pointer-events-none"></div>
             
             <div className="p-6 relative z-10 border-b border-white/5 flex justify-between items-center">
