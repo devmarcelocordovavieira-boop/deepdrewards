@@ -879,8 +879,8 @@ export default function App() {
 
           <div className="max-w-md w-full mx-auto animate-in fade-in slide-in-from-left-8 duration-700">
             <div className="flex items-center gap-3 mb-12">
-              <div className="w-16 h-16 flex items-center justify-center">
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,229,255,0.5)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+              <div className="h-16 flex items-center justify-center">
+                <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_15px_rgba(0,229,255,0.5)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
                 <Cpu className="w-8 h-8 text-[#00A3FF] hidden" />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-white uppercase">
@@ -991,8 +991,8 @@ export default function App() {
       {/* SIDEBAR (DESKTOP) */}
       <aside className="hidden md:flex flex-col w-64 bg-[#0A0A0A]/80 backdrop-blur-xl border-r border-white/10 z-40 sticky top-0 h-screen shadow-[4px_0_24px_rgba(0,163,255,0.05)]">
         <div className="p-6 flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+          <div className="h-12 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
             <Cpu className="w-6 h-6 text-[#00A3FF] hidden" />
           </div>
           <h1 className="text-xl font-black tracking-tight text-white uppercase">
@@ -1077,8 +1077,8 @@ export default function App() {
         <header className="md:hidden bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3 flex flex-col gap-3 shadow-[0_4px_24px_rgba(0,163,255,0.05)]">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+              <div className="h-10 flex items-center justify-center">
+                <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
                 <Cpu className="w-5 h-5 text-[#00A3FF] hidden" />
               </div>
               <h1 className="text-lg font-black tracking-tight text-white uppercase">
@@ -1289,6 +1289,12 @@ export default function App() {
                                 <p className="text-sm text-gray-500 mb-2 line-clamp-2">{produto.descricao}</p>
                                 {produto.regras && <p className="text-xs text-[#00A3FF]/70 mb-4 font-medium">Regras: {produto.regras}</p>}
                                 
+                                <div className="flex items-center gap-2 mb-4">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 text-gray-500 rounded-md border border-white/5 uppercase tracking-wider">
+                                    {produto.estoque} {produto.estoque === 1 ? 'disponível' : 'disponíveis'}
+                                  </span>
+                                </div>
+
                                 {!isOutOfStock && (
                                   <div className="mb-6 space-y-2">
                                     <div className="flex justify-between text-xs font-bold">
