@@ -1,5 +1,32 @@
 @import "tailwindcss";
 
+/* NATIVE APP FEEL CSS */
+html, body {
+  /* Remove o 'bounce' no iOS/Android */
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+  background-color: #050505;
+}
+
+* {
+  /* Remove o highlight azul ao clicar no iOS */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Desabilita seleção de texto para parecer um app */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  /* Desabilita o menu de contexto no iOS ao segurar (opcional, mas recomendado para apps) */
+  -webkit-touch-callout: none;
+}
+
+/* Permite seleção apenas onde faz sentido (inputs e textareas) */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
 /* Estilização Global de Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
