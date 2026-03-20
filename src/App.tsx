@@ -1002,7 +1002,7 @@ export default function App() {
 
         <div className="px-4 mb-8">
           <div className="flex flex-col gap-3 p-3 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
-            <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-20 ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
+            <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-20 pointer-events-none ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
             <div className="flex items-center gap-3">
               <div className="relative group cursor-pointer flex-shrink-0">
                 <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
@@ -1011,14 +1011,14 @@ export default function App() {
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </label>
               </div>
-              <div className="overflow-hidden flex-1">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-white truncate">{currentUser.nome}</p>
-                <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center justify-between gap-1 mt-0.5">
                   <div className={`flex items-center gap-1 text-xs font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
                     <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
-                    <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+                    <span className="truncate">{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
                   </div>
-                  <button type="button" onClick={() => setShowRankingsModal(true)} className="p-2 -m-2 text-gray-500 hover:text-white transition-colors cursor-pointer" title="Ver todos os rankings">
+                  <button type="button" onClick={() => setShowRankingsModal(true)} className="p-1.5 -mr-1.5 text-gray-500 hover:text-white transition-colors cursor-pointer shrink-0 relative z-50 pointer-events-auto" title="Ver todos os rankings">
                     <Info className="w-4 h-4" />
                   </button>
                 </div>
@@ -1330,8 +1330,8 @@ export default function App() {
                   <div className="divide-y divide-white/5">
                     {resgates.filter(r => r.usuario_id === currentUser.id).map(resgate => (
                       <div key={resgate.id} className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/5 transition-colors">
-                        <div>
-                          <p className="font-bold text-white text-lg">{resgate.produto_nome}</p>
+                        <div className="min-w-0 flex-1 w-full">
+                          <p className="font-bold text-white text-lg truncate">{resgate.produto_nome}</p>
                           <p className="text-sm text-gray-400">Resgatado em {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}</p>
                         </div>
                         <div>
@@ -1404,9 +1404,9 @@ export default function App() {
                   ) : (
                     <div className="space-y-3">
                       {submissoes.filter(s => s.usuario_id === currentUser.id).map(sub => (
-                        <div key={sub.id} className="p-4 bg-[#121212] rounded-2xl border border-white/5 flex flex-col gap-3">
+                        <div key={sub.id} className="p-4 bg-[#121212] rounded-2xl border border-white/5 flex flex-col gap-3 w-full overflow-hidden">
                           <div className="flex justify-between items-start gap-4">
-                            <div className="min-w-0 flex-1">
+                            <div className="min-w-0 flex-1 w-full">
                               <h3 className="font-bold text-white truncate">{sub.tarefa_nome}</h3>
                               <p className="text-xs text-gray-400 mt-1">{new Date(sub.data_envio).toLocaleDateString('pt-BR')}</p>
                             </div>
@@ -1421,7 +1421,7 @@ export default function App() {
                           {sub.status === 'rejeitado' && sub.motivo_rejeicao && (
                             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
                               <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">Motivo da Rejeição:</p>
-                              <p className="text-sm text-red-200 italic break-words whitespace-pre-wrap">"{sub.motivo_rejeicao}"</p>
+                              <p className="text-sm text-red-200 italic break-words whitespace-pre-wrap w-full overflow-y-auto max-h-32">"{sub.motivo_rejeicao}"</p>
                             </div>
                           )}
                         </div>
@@ -1666,22 +1666,22 @@ export default function App() {
                       </div>
                       
                       {/* Content Card */}
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-4 rounded-2xl bg-[#121212] border border-white/5 shadow-sm hover:border-white/10 transition-colors">
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-4 rounded-2xl bg-[#121212] border border-white/5 shadow-sm hover:border-white/10 transition-colors overflow-hidden">
                         <div className="flex items-center gap-3 mb-2">
-                          <img src={atividade.user?.avatar} alt={atividade.user?.nome} className="w-8 h-8 rounded-full object-cover border border-white/10" />
-                          <div>
-                            <p className="text-sm font-bold text-white">{atividade.user?.nome}</p>
+                          <img src={atividade.user?.avatar} alt={atividade.user?.nome} className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-white truncate">{atividade.user?.nome}</p>
                             <p className="text-xs text-gray-500">{atividade.date.toLocaleDateString('pt-BR')} às {atividade.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
                         </div>
                         
                         {atividade.type === 'missao' ? (
-                          <p className="text-sm text-gray-300">
-                            Completou a missão <span className="font-bold text-white">{atividade.data.tarefa_nome}</span> e ganhou <span className="text-emerald-400 font-bold">+{atividade.data.pontos} pts</span>!
+                          <p className="text-sm text-gray-300 break-words">
+                            Completou a missão <span className="font-bold text-white">{atividade.data.tarefa_nome}</span> e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{atividade.data.pontos} pts</span>!
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-300">
-                            Resgatou <span className="font-bold text-white">{atividade.data.produto_nome}</span> por <span className="text-[#00F0FF] font-bold">{atividade.data.preco_pontos} pts</span>!
+                          <p className="text-sm text-gray-300 break-words">
+                            Resgatou <span className="font-bold text-white">{atividade.data.produto_nome}</span> por <span className="text-[#00F0FF] font-bold whitespace-nowrap">{atividade.data.preco_pontos} pts</span>!
                           </p>
                         )}
                       </div>
@@ -1730,14 +1730,14 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     {submissoes.filter(s => s.status === 'pendente').map(sub => (
-                      <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]">
-                        <div className="space-y-2 flex-1 min-w-0">
+                      <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden">
+                        <div className="space-y-2 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white text-lg truncate">{sub.usuario_nome}</span>
                             <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)] whitespace-nowrap">+{sub.pontos} pts</span>
                           </div>
                           <div className="text-sm font-bold text-gray-300 truncate">{sub.tarefa_nome}</div>
-                          <p className="text-sm text-gray-400 bg-[#050505] p-3 rounded-xl border border-white/5 break-words whitespace-pre-wrap overflow-hidden">{sub.descricao}</p>
+                          <p className="text-sm text-gray-400 bg-[#050505] p-3 rounded-xl border border-white/5 break-words whitespace-pre-wrap overflow-y-auto max-h-32 w-full">{sub.descricao}</p>
                         </div>
                         
                         <div className="w-full md:w-36 h-36 bg-[#0A0A0A] rounded-2xl border border-white/10 relative flex-shrink-0 group overflow-hidden">
@@ -1790,8 +1790,8 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     {resgates.filter(r => r.status === 'pendente').map(resgate => (
-                      <div key={resgate.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]">
-                        <div className="space-y-2 flex-1 min-w-0">
+                      <div key={resgate.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden">
+                        <div className="space-y-2 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white text-lg truncate">{resgate.usuario_nome}</span>
                             <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)] whitespace-nowrap">-{resgate.preco_pontos} pts</span>
@@ -1863,25 +1863,25 @@ export default function App() {
                             handleReorderTarefas(draggedTarefaId, tarefa.id);
                           }
                         }}
-                        className={`flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] ${draggedTarefaId === tarefa.id ? 'opacity-50' : ''}`}
+                        className={`flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden ${draggedTarefaId === tarefa.id ? 'opacity-50' : ''}`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors shrink-0">
                             <GripVertical className="w-5 h-5" />
                           </div>
                           {tarefa.imagem_url ? (
-                            <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
+                            <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10 shrink-0" />
                           ) : (
-                            <div className="w-12 h-12 rounded-xl bg-[#050505] border border-white/10 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl bg-[#050505] border border-white/10 flex items-center justify-center shrink-0">
                               <Camera className="w-5 h-5 text-gray-600" />
                             </div>
                           )}
-                          <div>
-                            <p className="font-bold text-white text-sm">{tarefa.nome}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-white text-sm truncate">{tarefa.nome}</p>
                             <p className="text-xs text-[#00F0FF] font-bold">{tarefa.pontos} pts</p>
                           </div>
                         </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                           <button 
                             onClick={() => {
                               setEditingTarefa(tarefa);
@@ -2046,19 +2046,19 @@ export default function App() {
                             handleReorderProdutos(draggedProdutoId, produto.id);
                           }
                         }}
-                        className={`flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] ${draggedProdutoId === produto.id ? 'opacity-50' : ''}`}
+                        className={`flex items-center justify-between p-4 bg-[#121212]/80 rounded-2xl border border-white/5 group hover:border-[#00A3FF]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden ${draggedProdutoId === produto.id ? 'opacity-50' : ''}`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#00A3FF] transition-colors shrink-0">
                             <GripVertical className="w-5 h-5" />
                           </div>
-                          <img src={produto.imagem_url} alt={produto.nome} loading="lazy" className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10" />
-                          <div>
-                            <p className="font-bold text-white text-sm">{produto.nome}</p>
+                          <img src={produto.imagem_url} alt={produto.nome} loading="lazy" className="w-12 h-12 rounded-xl object-cover bg-[#050505] border border-white/10 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-white text-sm truncate">{produto.nome}</p>
                             <p className="text-xs text-[#00F0FF] font-bold">{produto.preco_pontos} pts • {produto.estoque} em estoque</p>
                           </div>
                         </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                           <button 
                             onClick={() => {
                               setEditingProduto(produto);
@@ -2230,11 +2230,11 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     {resgates.map(resgate => (
-                      <div key={resgate.id} className={`p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center rounded-2xl transition-all border ${resgate.usado ? 'bg-[#050505] border-white/5 opacity-75' : 'bg-[#121212]/80 border-white/5 hover:border-[#00A3FF]/30 hover:bg-white/5 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]'}`}>
-                        <div className="space-y-1 flex-1">
+                      <div key={resgate.id} className={`p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center rounded-2xl transition-all border w-full overflow-hidden ${resgate.usado ? 'bg-[#050505] border-white/5 opacity-75' : 'bg-[#121212]/80 border-white/5 hover:border-[#00A3FF]/30 hover:bg-white/5 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]'}`}>
+                        <div className="space-y-1 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-lg">{resgate.usuario_nome}</span>
-                            <span className="text-sm text-gray-500">• {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}</span>
+                            <span className="font-bold text-white text-lg truncate">{resgate.usuario_nome}</span>
+                            <span className="text-sm text-gray-500 shrink-0">• {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}</span>
                           </div>
                           <div className="text-sm font-bold text-[#00F0FF]">{resgate.produto_nome}</div>
                         </div>
@@ -2282,15 +2282,15 @@ export default function App() {
                     .filter(u => u.cargo !== 'admin')
                     .filter(u => u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase()))
                     .map(user => (
-                    <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] gap-4">
-                      <div className="flex items-center gap-3">
-                        <img src={user.avatar} alt={user.nome} loading="lazy" className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover" />
-                        <div>
-                          <p className="font-bold text-white">{user.nome}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
+                    <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] gap-4 w-full overflow-hidden">
+                      <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
+                        <img src={user.avatar} alt={user.nome} loading="lazy" className="w-10 h-10 rounded-full bg-[#0A0A0A] border border-white/10 object-cover shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-white truncate">{user.nome}</p>
+                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="flex items-center gap-4 w-full sm:w-auto shrink-0">
                         <div className="text-right">
                           <p className="text-sm font-bold text-[#00F0FF]">{user.pontos} pts atuais</p>
                           <p className="text-xs text-gray-500">{user.pontos_acumulados} pts total</p>
