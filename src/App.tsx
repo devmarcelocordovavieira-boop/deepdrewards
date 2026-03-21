@@ -887,7 +887,7 @@ export default function App() {
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser || authMode === 'update_password') {
     return (
       <div className="min-h-screen flex bg-[#050505] text-white font-sans relative overflow-hidden">
         {/* GLOBAL GRID BACKGROUND */}
@@ -945,9 +945,16 @@ export default function App() {
             ) : (
               <form onSubmit={handleAuth} className="space-y-5">
               {authMode === 'register' && !inviteCode ? (
-                <div className="p-6 bg-red-500/10 text-red-400 rounded-2xl font-bold border border-red-500/20 flex items-start gap-3">
-                  <Shield className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                  <p>O cadastro é restrito. Você precisa de um link de convite oficial da sua empresa para criar uma conta.</p>
+                <div className="p-8 bg-[#121212] rounded-3xl border border-white/5 flex flex-col items-center text-center gap-4">
+                  <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-2">
+                    <Lock className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2">Acesso Restrito</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
+                      O cadastro na plataforma é feito exclusivamente através de um <strong className="text-white">link de convite oficial</strong> enviado pela sua empresa.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -1014,19 +1021,36 @@ export default function App() {
               )}
 
               <div className="mt-8 pt-6 border-t border-white/10">
-                {authMode === 'login' && !inviteCode ? (
+                {authMode === 'update_password' ? (
                   <button 
                     type="button"
                     onClick={() => {
-                      setAuthMode('register');
-                      setAuthEmail('');
+                      setAuthMode('login');
                       setAuthPassword('');
-                      setAuthName('');
                     }}
                     className="text-sm font-bold text-gray-400 hover:text-[#00A3FF] transition-colors flex items-center gap-2"
                   >
-                    Possui um convite? Cadastre-se
+                    <ArrowLeft className="w-4 h-4" /> Cancelar e ir para o painel
                   </button>
+                ) : authMode === 'login' && !inviteCode ? (
+                  <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-white font-bold text-sm mb-1">Novo por aqui?</h4>
+                      <p className="text-gray-400 text-xs">Você precisa de um convite para criar sua conta.</p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('register');
+                        setAuthEmail('');
+                        setAuthPassword('');
+                        setAuthName('');
+                      }}
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
+                    >
+                      Tenho um convite
+                    </button>
+                  </div>
                 ) : authMode === 'forgot_password' ? (
                   <button 
                     type="button"
