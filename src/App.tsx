@@ -73,7 +73,7 @@ export default function App() {
   }, [searchUser]);
 
   // Auth forms state
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password' | 'update_password'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
@@ -131,7 +131,7 @@ export default function App() {
 
     return {
       percentage,
-      text: `Faltam ${pointsRemaining} pts para ${nextTier.name}`,
+      text: `Faltam ${pointsRemaining} pts para o nível ${nextTier.name}`,
       nextTierName: nextTier.name,
       nextTierIcon: nextTier.icon
     };
@@ -147,7 +147,10 @@ export default function App() {
 
     checkUser();
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('update_password');
+      }
       if (session?.user) {
         fetchUserData(session.user.id);
       } else {
@@ -290,6 +293,20 @@ export default function App() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (authMode === 'update_password') {
+      if (!authPassword) return showNotification('Digite a nova senha.', 'error');
+      try {
+        const { error } = await supabase.auth.updateUser({ password: authPassword });
+        if (error) throw error;
+        showNotification('Senha atualizada com sucesso!', 'success');
+        setAuthMode('login');
+        setAuthPassword('');
+      } catch (error: any) {
+        showNotification(error.message || 'Erro ao atualizar senha', 'error');
+      }
+      return;
+    }
+
     if (authMode === 'forgot_password') {
       if (!authEmail) return showNotification('Preencha seu e-mail.', 'error');
       try {
@@ -905,10 +922,10 @@ export default function App() {
 
             <div className="mb-10">
               <h2 className="text-4xl font-black text-white mb-3 tracking-tight">
-                {authMode === 'login' ? 'Bem-vindo de volta' : authMode === 'register' ? 'Junte-se ao time' : 'Recuperar Senha'}
+                {authMode === 'login' ? 'Bem-vindo de volta' : authMode === 'register' ? 'Junte-se ao time' : authMode === 'update_password' ? 'Nova Senha' : 'Recuperar Senha'}
               </h2>
               <p className="text-gray-400 font-medium text-lg">
-                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : authMode === 'register' ? 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.' : 'Digite seu e-mail para receber um link de redefinição de senha.'}
+                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : authMode === 'register' ? 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.' : authMode === 'update_password' ? 'Digite sua nova senha abaixo.' : 'Digite seu e-mail para receber um link de redefinição de senha.'}
               </p>
             </div>
             
@@ -933,21 +950,25 @@ export default function App() {
                     </div>
                   )}
                   
-                  <div>
-                    <label className="block text-sm font-bold text-gray-300 mb-2">E-mail Corporativo</label>
-                    <input 
-                      type="email" 
-                      value={authEmail}
-                      onChange={e => setAuthEmail(e.target.value)}
-                      className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
-                      placeholder="voce@empresa.com"
-                    />
-                  </div>
+                  {authMode !== 'update_password' && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-300 mb-2">E-mail Corporativo</label>
+                      <input 
+                        type="email" 
+                        value={authEmail}
+                        onChange={e => setAuthEmail(e.target.value)}
+                        className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
+                        placeholder="voce@empresa.com"
+                      />
+                    </div>
+                  )}
 
                   {authMode !== 'forgot_password' && (
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-bold text-gray-300">Senha</label>
+                        <label className="block text-sm font-bold text-gray-300">
+                          {authMode === 'update_password' ? 'Nova Senha' : 'Senha'}
+                        </label>
                         {authMode === 'login' && (
                           <button 
                             type="button" 
@@ -972,7 +993,7 @@ export default function App() {
                     type="submit"
                     className="w-full py-4 mt-4 bg-[#00A3FF] text-white rounded-2xl font-bold text-lg hover:bg-[#0077CC] transition-all shadow-lg shadow-[#00A3FF]/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
                   >
-                    {authMode === 'login' ? 'Entrar na Plataforma' : authMode === 'register' ? 'Criar Minha Conta' : 'Enviar Link de Recuperação'}
+                    {authMode === 'login' ? 'Entrar na Plataforma' : authMode === 'register' ? 'Criar Minha Conta' : authMode === 'update_password' ? 'Salvar Nova Senha' : 'Enviar Link de Recuperação'}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </>
@@ -1575,6 +1596,47 @@ export default function App() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-black text-white tracking-tight">Mais Ativos</h1>
               <p className="text-gray-400 mt-2 font-medium">Os mais ativos do time.</p>
+            </div>
+
+            {/* RANKING LEGEND */}
+            <div className="bg-[#121212] rounded-2xl p-4 border border-white/5 mb-8 overflow-x-auto shadow-sm">
+              <div className="flex items-center gap-6 min-w-max justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/60 text-lg">🌱</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-white/60 leading-none">Iniciante</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">0 - 999 pts</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-orange-400 text-lg">🥉</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-orange-400 leading-none">Bronze</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">1k - 4.9k pts</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-300 text-lg">🥈</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-300 leading-none">Prata</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">5k - 9.9k pts</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-400 text-lg">🏆</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-yellow-400 leading-none">Ouro</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">10k - 49.9k pts</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-400 text-lg">💎</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-cyan-400 leading-none">Diamante</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">50k+ pts</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {(() => {
