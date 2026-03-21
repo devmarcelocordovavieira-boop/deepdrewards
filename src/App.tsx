@@ -73,7 +73,7 @@ export default function App() {
   }, [searchUser]);
 
   // Auth forms state
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
@@ -100,20 +100,20 @@ export default function App() {
   };
 
   const getUserTier = (pontos: number) => {
-    if (pontos >= 5000) return { name: 'Diamante', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20', icon: '💎' };
-    if (pontos >= 2000) return { name: 'Ouro', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: '🏆' };
-    if (pontos >= 500) return { name: 'Prata', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20', icon: '🥈' };
-    if (pontos >= 100) return { name: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: '🥉' };
+    if (pontos >= 50000) return { name: 'Diamante', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20', icon: '💎' };
+    if (pontos >= 10000) return { name: 'Ouro', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: '🏆' };
+    if (pontos >= 5000) return { name: 'Prata', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20', icon: '🥈' };
+    if (pontos >= 1000) return { name: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: '🥉' };
     return { name: 'Iniciante', color: 'text-white/60', bg: 'bg-white/5', border: 'border-white/10', icon: '🌱' };
   };
 
   const getRankProgress = (pontos: number) => {
     const tiers = [
-      { name: 'Iniciante', min: 0, max: 99, icon: '🌱' },
-      { name: 'Bronze', min: 100, max: 499, icon: '🥉' },
-      { name: 'Prata', min: 500, max: 1999, icon: '🥈' },
-      { name: 'Ouro', min: 2000, max: 4999, icon: '🏆' },
-      { name: 'Diamante', min: 5000, max: Infinity, icon: '💎' }
+      { name: 'Iniciante', min: 0, max: 999, icon: '🌱' },
+      { name: 'Bronze', min: 1000, max: 4999, icon: '🥉' },
+      { name: 'Prata', min: 5000, max: 9999, icon: '🥈' },
+      { name: 'Ouro', min: 10000, max: 49999, icon: '🏆' },
+      { name: 'Diamante', min: 50000, max: Infinity, icon: '💎' }
     ];
 
     const currentTierIndex = tiers.findIndex(t => pontos >= t.min && pontos <= t.max);
@@ -290,6 +290,21 @@ export default function App() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (authMode === 'forgot_password') {
+      if (!authEmail) return showNotification('Preencha seu e-mail.', 'error');
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        showNotification('E-mail de recuperação enviado! Verifique sua caixa de entrada.', 'success');
+        setAuthMode('login');
+      } catch (error: any) {
+        showNotification(error.message || 'Erro ao enviar e-mail', 'error');
+      }
+      return;
+    }
+
     if (!authEmail || !authPassword || (authMode === 'register' && !authName)) {
       return showNotification('Preencha todos os campos.', 'error');
     }
@@ -890,10 +905,10 @@ export default function App() {
 
             <div className="mb-10">
               <h2 className="text-4xl font-black text-white mb-3 tracking-tight">
-                {authMode === 'login' ? 'Bem-vindo de volta' : 'Junte-se ao time'}
+                {authMode === 'login' ? 'Bem-vindo de volta' : authMode === 'register' ? 'Junte-se ao time' : 'Recuperar Senha'}
               </h2>
               <p className="text-gray-400 font-medium text-lg">
-                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.'}
+                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : authMode === 'register' ? 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.' : 'Digite seu e-mail para receber um link de redefinição de senha.'}
               </p>
             </div>
             
@@ -929,42 +944,81 @@ export default function App() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-300 mb-2">Senha</label>
-                    <input 
-                      type="password" 
-                      value={authPassword}
-                      onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
-                      placeholder="••••••••"
-                    />
-                  </div>
+                  {authMode !== 'forgot_password' && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-bold text-gray-300">Senha</label>
+                        {authMode === 'login' && (
+                          <button 
+                            type="button" 
+                            onClick={() => setAuthMode('forgot_password')}
+                            className="text-xs font-bold text-[#00A3FF] hover:text-[#0077CC] transition-colors"
+                          >
+                            Esqueceu a senha?
+                          </button>
+                        )}
+                      </div>
+                      <input 
+                        type="password" 
+                        value={authPassword}
+                        onChange={e => setAuthPassword(e.target.value)}
+                        className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  )}
 
                   <button 
                     type="submit"
                     className="w-full py-4 mt-4 bg-[#00A3FF] text-white rounded-2xl font-bold text-lg hover:bg-[#0077CC] transition-all shadow-lg shadow-[#00A3FF]/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
                   >
-                    {authMode === 'login' ? 'Entrar na Plataforma' : 'Criar Minha Conta'}
+                    {authMode === 'login' ? 'Entrar na Plataforma' : authMode === 'register' ? 'Criar Minha Conta' : 'Enviar Link de Recuperação'}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </>
               )}
 
               <div className="mt-8 pt-6 border-t border-white/10">
-                {authMode === 'login' && !inviteCode ? null : (
+                {authMode === 'login' && !inviteCode ? (
                   <button 
                     type="button"
                     onClick={() => {
-                      setAuthMode(authMode === 'login' ? 'register' : 'login');
+                      setAuthMode('register');
                       setAuthEmail('');
                       setAuthPassword('');
                       setAuthName('');
                     }}
                     className="text-sm font-bold text-gray-400 hover:text-[#00A3FF] transition-colors flex items-center gap-2"
                   >
-                    {authMode === 'login' ? 'Possui um convite? Cadastre-se' : 'Já tem uma conta? Faça login'}
+                    Possui um convite? Cadastre-se
                   </button>
-                )}
+                ) : authMode === 'forgot_password' ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('login');
+                      setAuthEmail('');
+                      setAuthPassword('');
+                      setAuthName('');
+                    }}
+                    className="text-sm font-bold text-gray-400 hover:text-[#00A3FF] transition-colors flex items-center gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Voltar para o login
+                  </button>
+                ) : !inviteCode ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('login');
+                      setAuthEmail('');
+                      setAuthPassword('');
+                      setAuthName('');
+                    }}
+                    className="text-sm font-bold text-gray-400 hover:text-[#00A3FF] transition-colors flex items-center gap-2"
+                  >
+                    Já tem uma conta? Faça login
+                  </button>
+                ) : null}
               </div>
             </form>
           </div>
