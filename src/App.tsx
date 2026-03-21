@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
-  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info
+  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -73,7 +73,7 @@ export default function App() {
   }, [searchUser]);
 
   // Auth forms state
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password' | 'update_password'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password' | 'update_password' | 'email_sent'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
@@ -314,8 +314,7 @@ export default function App() {
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        showNotification('E-mail de recuperação enviado! Verifique sua caixa de entrada.', 'success');
-        setAuthMode('login');
+        setAuthMode('email_sent');
       } catch (error: any) {
         showNotification(error.message || 'Erro ao enviar e-mail', 'error');
       }
@@ -922,14 +921,29 @@ export default function App() {
 
             <div className="mb-10">
               <h2 className="text-4xl font-black text-white mb-3 tracking-tight">
-                {authMode === 'login' ? 'Bem-vindo de volta' : authMode === 'register' ? 'Junte-se ao time' : authMode === 'update_password' ? 'Nova Senha' : 'Recuperar Senha'}
+                {authMode === 'login' ? 'Bem-vindo de volta' : authMode === 'register' ? 'Junte-se ao time' : authMode === 'update_password' ? 'Nova Senha' : authMode === 'email_sent' ? 'E-mail Enviado!' : 'Recuperar Senha'}
               </h2>
               <p className="text-gray-400 font-medium text-lg">
-                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : authMode === 'register' ? 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.' : authMode === 'update_password' ? 'Digite sua nova senha abaixo.' : 'Digite seu e-mail para receber um link de redefinição de senha.'}
+                {authMode === 'login' ? 'Faça login para acessar suas missões e resgatar prêmios.' : authMode === 'register' ? 'Crie sua conta e comece a ser reconhecido pelo seu trabalho.' : authMode === 'update_password' ? 'Digite sua nova senha abaixo.' : authMode === 'email_sent' ? 'Enviamos um link de recuperação para o seu e-mail. Ao clicar nele, você será redirecionado para criar uma nova senha.' : 'Digite seu e-mail para receber um link de redefinição de senha.'}
               </p>
             </div>
             
-            <form onSubmit={handleAuth} className="space-y-5">
+            {authMode === 'email_sent' ? (
+              <div className="space-y-6">
+                <div className="p-6 bg-[#00A3FF]/10 text-[#00A3FF] rounded-2xl font-bold border border-[#00A3FF]/20 flex items-start gap-3">
+                  <Mail className="w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <p>Verifique sua caixa de entrada e também a pasta de spam. O link expira em algumas horas.</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setAuthMode('login')}
+                  className="w-full py-4 bg-white/5 text-white rounded-2xl font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-5 h-5" /> Voltar para o Login
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleAuth} className="space-y-5">
               {authMode === 'register' && !inviteCode ? (
                 <div className="p-6 bg-red-500/10 text-red-400 rounded-2xl font-bold border border-red-500/20 flex items-start gap-3">
                   <Shield className="w-6 h-6 flex-shrink-0 mt-0.5" />
@@ -1042,6 +1056,7 @@ export default function App() {
                 ) : null}
               </div>
             </form>
+            )}
           </div>
         </div>
 
@@ -1596,47 +1611,6 @@ export default function App() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-black text-white tracking-tight">Mais Ativos</h1>
               <p className="text-gray-400 mt-2 font-medium">Os mais ativos do time.</p>
-            </div>
-
-            {/* RANKING LEGEND */}
-            <div className="bg-[#121212] rounded-2xl p-4 border border-white/5 mb-8 overflow-x-auto shadow-sm">
-              <div className="flex items-center gap-6 min-w-max justify-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-white/60 text-lg">🌱</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-white/60 leading-none">Iniciante</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">0 - 999 pts</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-orange-400 text-lg">🥉</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-orange-400 leading-none">Bronze</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">1k - 4.9k pts</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-300 text-lg">🥈</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-gray-300 leading-none">Prata</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">5k - 9.9k pts</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-400 text-lg">🏆</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-yellow-400 leading-none">Ouro</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">10k - 49.9k pts</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-cyan-400 text-lg">💎</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-cyan-400 leading-none">Diamante</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">50k+ pts</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {(() => {
@@ -2492,11 +2466,11 @@ export default function App() {
             
             <div className="p-6 space-y-4 relative z-10">
               {[
-                { name: 'Iniciante', min: 0, max: 99, icon: '🌱', color: 'text-white/60', bg: 'bg-white/5', border: 'border-white/10' },
-                { name: 'Bronze', min: 100, max: 499, icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' },
-                { name: 'Prata', min: 500, max: 1999, icon: '🥈', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20' },
-                { name: 'Ouro', min: 2000, max: 4999, icon: '🏆', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
-                { name: 'Diamante', min: 5000, max: '∞', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }
+                { name: 'Iniciante', min: 0, max: 999, icon: '🌱', color: 'text-white/60', bg: 'bg-white/5', border: 'border-white/10' },
+                { name: 'Bronze', min: 1000, max: 4999, icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' },
+                { name: 'Prata', min: 5000, max: 9999, icon: '🥈', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20' },
+                { name: 'Ouro', min: 10000, max: 49999, icon: '🏆', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+                { name: 'Diamante', min: 50000, max: '∞', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }
               ].map((tier, index) => {
                 const isCurrent = currentUser?.pontos_acumulados >= tier.min && (tier.max === '∞' || currentUser?.pontos_acumulados <= tier.max);
                 return (
