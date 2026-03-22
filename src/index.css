@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@theme {
+  --animate-shrink: shrink 3s linear forwards;
+  @keyframes shrink {
+    0% { width: 100%; }
+    100% { width: 0%; }
+  }
+}
+
 /* NATIVE APP FEEL CSS */
 html, body {
   /* Remove o 'bounce' no iOS/Android */

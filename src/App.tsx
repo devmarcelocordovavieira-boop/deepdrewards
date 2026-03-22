@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
-  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail
+  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -76,6 +76,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password' | 'update_password' | 'email_sent'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authName, setAuthName] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showRankingsModal, setShowRankingsModal] = useState(false);
@@ -898,11 +899,12 @@ export default function App() {
           
           {/* NOTIFICATION */}
           {notification && (
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg border ${
-                notification.type === 'success' ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]' : 'bg-[#FEF2F2] border-[#FECACA] text-[#991B1B]'
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300 z-50">
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
+                notification.type === 'success' ? 'bg-[#052e16]/80 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/80 border-[#991b1b] text-[#f87171]'
               }`}>
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
+                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
                 <p className="text-sm font-bold">{notification.msg}</p>
               </div>
             </div>
@@ -1000,13 +1002,22 @@ export default function App() {
                           </button>
                         )}
                       </div>
-                      <input 
-                        type="password" 
-                        value={authPassword}
-                        onChange={e => setAuthPassword(e.target.value)}
-                        className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
-                        placeholder="••••••••"
-                      />
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          value={authPassword}
+                          onChange={e => setAuthPassword(e.target.value)}
+                          className="w-full bg-[#121212] border border-white/5 rounded-2xl p-4 pr-12 text-white font-medium focus:ring-2 focus:ring-[#00A3FF]/20 focus:border-[#00A3FF] transition-all placeholder-gray-500"
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -1246,10 +1257,11 @@ export default function App() {
         {/* NOTIFICATION */}
         {notification && (
           <div className="fixed top-4 right-4 z-50 w-[90%] md:w-auto max-w-md animate-in slide-in-from-top-4 fade-in duration-300">
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md ${
-              notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
+              notification.type === 'success' ? 'bg-[#052e16]/90 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/90 border-[#991b1b] text-[#f87171]'
             }`}>
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
+              {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
               <p className="text-sm font-bold">{notification.msg}</p>
             </div>
           </div>
@@ -1321,12 +1333,22 @@ export default function App() {
               return (
                 <div className="space-y-12">
                   {/* AVAILABLE PRODUCTS */}
-                  {availableProducts.length > 0 && (
-                    <div>
-                      <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                        <Gift className="w-5 h-5 text-[#00A3FF]" /> Resgate Agora
-                      </h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {availableProducts.length === 0 && lockedProducts.length === 0 ? (
+                    <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4">
+                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
+                        <Gift className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white">Nenhum prêmio disponível</h3>
+                      <p className="text-sm">A loja está sendo reabastecida. Volte em breve!</p>
+                    </div>
+                  ) : (
+                    <>
+                      {availableProducts.length > 0 && (
+                        <div>
+                          <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+                            <Gift className="w-5 h-5 text-[#00A3FF]" /> Resgate Agora
+                          </h2>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {availableProducts.map(produto => (
                           <div key={produto.id} className="bg-[#121212] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group border border-[#00A3FF]/30 hover:border-[#00A3FF]">
                             <div className="aspect-[4/3] w-full bg-[#0A0A0A] relative overflow-hidden">
@@ -1436,9 +1458,11 @@ export default function App() {
                       </div>
                     </div>
                   )}
-                </div>
-              );
-            })()}
+                </>
+              )}
+            </div>
+          );
+        })()}
 
             {/* MEUS RESGATES */}
             {currentUser && resgates.filter(r => r.usuario_id === currentUser.id).length > 0 && (
@@ -1485,41 +1509,55 @@ export default function App() {
                 </div>
                 
                 <div className="space-y-4">
-                  {tarefas.filter(t => t.ativo !== false).map(tarefa => (
-                    <div 
-                      key={tarefa.id} 
-                      onClick={() => setSelectedTarefa(tarefa.id)}
-                      className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative"
-                    >
-                      <div className="flex items-center gap-4 z-10">
-                        {tarefa.imagem_url ? (
-                          <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
-                        ) : (
-                          <div className="w-16 h-16 bg-[#00A3FF]/20 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-[#00A3FF]/30 shrink-0">
-                            <Cpu className="w-8 h-8 text-[#00F0FF]" />
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-bold text-white text-lg">{tarefa.nome}</h3>
-                          {tarefa.descricao && <p className="text-sm text-gray-400 mt-0.5 line-clamp-2">{tarefa.descricao}</p>}
-                          {tarefa.regras && <p className="text-xs text-[#00A3FF] mt-1 font-medium">Regras: {tarefa.regras}</p>}
-                          <div className="flex items-center gap-1 mt-2">
-                            <Star className="w-4 h-4 text-[#00F0FF] fill-[#00F0FF]" />
-                            <span className="text-sm font-black text-[#00F0FF]">+{tarefa.pontos} pts</span>
+                  {tarefas.filter(t => t.ativo !== false).length === 0 ? (
+                    <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4">
+                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
+                        <Target className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white">Nenhuma missão no momento</h3>
+                      <p className="text-sm">Fique de olho, novas missões podem aparecer a qualquer momento!</p>
+                    </div>
+                  ) : (
+                    tarefas.filter(t => t.ativo !== false).map(tarefa => (
+                      <div 
+                        key={tarefa.id} 
+                        onClick={() => setSelectedTarefa(tarefa.id)}
+                        className="bg-[#121212] p-5 rounded-3xl border border-white/5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#00A3FF]/50 hover:bg-white/5 transition-all group overflow-hidden relative active:scale-[0.98]"
+                      >
+                        <div className="flex items-center gap-4 z-10">
+                          {tarefa.imagem_url ? (
+                            <img src={tarefa.imagem_url} alt={tarefa.nome} loading="lazy" className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" />
+                          ) : (
+                            <div className="w-16 h-16 bg-[#00A3FF]/20 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-[#00A3FF]/30 shrink-0">
+                              <Cpu className="w-8 h-8 text-[#00F0FF]" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-bold text-white text-lg">{tarefa.nome}</h3>
+                            {tarefa.descricao && <p className="text-sm text-gray-400 mt-0.5 line-clamp-2">{tarefa.descricao}</p>}
+                            {tarefa.regras && <p className="text-xs text-[#00A3FF] mt-1 font-medium">Regras: {tarefa.regras}</p>}
+                            <div className="flex items-center gap-1 mt-2">
+                              <Star className="w-4 h-4 text-[#00F0FF] fill-[#00F0FF]" />
+                              <span className="text-sm font-black text-[#00F0FF]">+{tarefa.pontos} pts</span>
+                            </div>
                           </div>
                         </div>
+                        <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10" />
                       </div>
-                      <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-[#00F0FF] transition-colors z-10" />
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 {/* MINHAS MISSÕES */}
                 <div className="mt-12">
                   <h2 className="text-2xl font-black text-white tracking-tight mb-6">Minhas Missões</h2>
                   {submissoes.filter(s => s.usuario_id === currentUser.id).length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5">
-                      Você ainda não enviou nenhuma missão.
+                    <div className="p-10 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-3">
+                      <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-1">
+                        <Camera className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p>Você ainda não enviou nenhuma missão.</p>
+                      <p className="text-sm text-gray-600">Escolha uma acima e comece a pontuar!</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1768,8 +1806,12 @@ export default function App() {
 
               if (atividades.length === 0) {
                 return (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5">
-                    Nenhuma atividade recente.
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
+                      <Star className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Nenhuma atividade recente</h3>
+                    <p className="text-sm">O mural está silencioso... Seja o primeiro a completar uma missão!</p>
                   </div>
                 );
               }
@@ -2536,13 +2578,15 @@ function SidebarNavButton({ active, onClick, icon, text }: { active: boolean, on
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all ${
+      className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all duration-200 active:scale-95 ${
         active 
-          ? 'bg-[#00A3FF] text-white shadow-lg shadow-[#00A3FF]/20' 
-          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          ? 'bg-[#00A3FF] text-white shadow-lg shadow-[#00A3FF]/20 translate-x-1' 
+          : 'text-gray-400 hover:text-white hover:bg-white/10 hover:translate-x-1'
       }`}
     >
-      {icon}
+      <div className={`transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {icon}
+      </div>
       {text}
     </button>
   );
@@ -2552,14 +2596,17 @@ function MobileNavButton({ active, onClick, icon, text }: { active: boolean, onC
   return (
     <button 
       onClick={onClick}
-      className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
-        active ? 'text-[#00F0FF]' : 'text-gray-500 hover:text-gray-300'
+      className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-90 relative ${
+        active ? 'text-[#00F0FF]' : 'text-gray-500 hover:text-gray-200'
       }`}
     >
-      <div className={`[&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? '[&>svg]:fill-[#00F0FF]/20' : ''}`}>
+      <div className={`transition-all duration-300 [&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? '[&>svg]:fill-[#00F0FF]/20 -translate-y-1' : 'hover:-translate-y-0.5'}`}>
         {icon}
       </div>
-      <span className="text-[10px] font-bold">{text}</span>
+      <span className={`text-[10px] font-bold transition-all duration-300 ${active ? 'opacity-100 translate-y-0' : 'opacity-70'}`}>{text}</span>
+      {active && (
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#00F0FF] rounded-full shadow-[0_0_8px_#00F0FF]" />
+      )}
     </button>
   );
 }
