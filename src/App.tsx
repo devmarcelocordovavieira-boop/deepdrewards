@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
-  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target
+  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -21,7 +21,7 @@ export default function App() {
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [submissoes, setSubmissoes] = useState<any[]>([]);
   const [penalizacoes, setPenalizacoes] = useState<any[]>([]);
-  const [notification, setNotification] = useState<{msg: string, type: 'success'|'error'} | null>(null);
+  const [notifications, setNotifications] = useState<{id: number, msg: string, type: 'success'|'error'}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Form states
@@ -80,8 +80,21 @@ export default function App() {
   const [authName, setAuthName] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showRankingsModal, setShowRankingsModal] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('soundEnabled') !== 'false');
+  
+  // Pull to refresh states
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = React.useRef(0);
+
+  useEffect(() => {
+    localStorage.setItem('soundEnabled', soundEnabled.toString());
+  }, [soundEnabled]);
 
   const playSound = (type: 'success' | 'error' | 'coin') => {
+    if (!soundEnabled) return;
     try {
       const audio = new Audio();
       if (type === 'success') audio.src = 'https://cdn.freesound.org/previews/320/320655_527080-lq.mp3'; // soft chime
@@ -96,8 +109,11 @@ export default function App() {
     if (sound !== 'none') {
       playSound(sound || type);
     }
-    setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 3000);
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 3000);
   };
 
   const getUserTier = (pontos: number) => {
@@ -383,6 +399,34 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentUser(null);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    if (target.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling) return;
+    const touchY = e.touches[0].clientY;
+    const diff = touchY - touchStartY.current;
+    if (diff > 0 && diff < 150) {
+      setPullDistance(diff);
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!isPulling) return;
+    setIsPulling(false);
+    if (pullDistance > 80) {
+      setIsRefreshing(true);
+      await fetchAllData();
+      setIsRefreshing(false);
+    }
+    setPullDistance(0);
   };
 
   const handleResgate = async (produto: any) => {
@@ -882,8 +926,44 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A3FF]"></div>
+      <div className="min-h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden">
+        {/* Sidebar Skeleton (Desktop) */}
+        <div className="hidden md:flex w-72 bg-[#0A0A0A] border-r border-white/5 flex-col p-6 gap-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/5 animate-pulse"></div>
+            <div className="w-32 h-6 rounded-lg bg-white/5 animate-pulse"></div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <div className="w-full h-24 rounded-2xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-12 rounded-xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-12 rounded-xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-12 rounded-xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-12 rounded-xl bg-white/5 animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="flex-1 flex flex-col p-4 md:p-8 gap-6">
+          {/* Header Skeleton */}
+          <div className="flex justify-between items-center">
+            <div className="w-48 h-8 rounded-lg bg-white/5 animate-pulse"></div>
+            <div className="w-12 h-12 rounded-full bg-white/5 animate-pulse"></div>
+          </div>
+
+          {/* Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="w-full h-40 rounded-3xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-40 rounded-3xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-40 rounded-3xl bg-white/5 animate-pulse"></div>
+          </div>
+
+          {/* List Skeleton */}
+          <div className="flex flex-col gap-4 mt-4">
+            <div className="w-full h-24 rounded-2xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-24 rounded-2xl bg-white/5 animate-pulse"></div>
+            <div className="w-full h-24 rounded-2xl bg-white/5 animate-pulse"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -898,17 +978,19 @@ export default function App() {
         <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative z-10 bg-[#050505]/80 backdrop-blur-sm">
           
           {/* NOTIFICATION */}
-          {notification && (
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm animate-in slide-in-from-top-4 fade-in duration-300 z-50">
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
-                notification.type === 'success' ? 'bg-[#052e16]/80 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/80 border-[#991b1b] text-[#f87171]'
-              }`}>
-                <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
-                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-                <p className="text-sm font-bold">{notification.msg}</p>
+          <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-50 flex flex-col gap-2">
+            {notifications.map(notification => (
+              <div key={notification.id} className="animate-in slide-in-from-top-4 fade-in duration-300">
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
+                  notification.type === 'success' ? 'bg-[#052e16]/80 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/80 border-[#991b1b] text-[#f87171]'
+                }`}>
+                  <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
+                  {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+                  <p className="text-sm font-bold">{notification.msg}</p>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
 
           <div className="max-w-md w-full mx-auto animate-in fade-in slide-in-from-left-8 duration-700">
             <div className="flex items-center gap-3 mb-12">
@@ -1188,7 +1270,11 @@ export default function App() {
           )}
         </nav>
 
-        <div className="p-4 mt-auto">
+        <div className="p-4 mt-auto space-y-2">
+          <button onClick={() => setSoundEnabled(!soundEnabled)} className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
+            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            {soundEnabled ? 'Som Ativado' : 'Som Desativado'}
+          </button>
           <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
             <LogOut className="w-5 h-5" /> Sair
           </button>
@@ -1211,6 +1297,9 @@ export default function App() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} className="p-2 -m-2 text-gray-500 hover:text-white transition-colors cursor-pointer" title={soundEnabled ? 'Desativar som' : 'Ativar som'}>
+                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
               <button type="button" onClick={() => setShowRankingsModal(true)} className="p-2 -m-2 text-gray-500 hover:text-white transition-colors cursor-pointer" title="Ver todos os rankings">
                 <Info className="w-5 h-5" />
               </button>
@@ -1255,17 +1344,19 @@ export default function App() {
         </header>
 
         {/* NOTIFICATION */}
-        {notification && (
-          <div className="fixed top-4 right-4 z-50 w-[90%] md:w-auto max-w-md animate-in slide-in-from-top-4 fade-in duration-300">
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
-              notification.type === 'success' ? 'bg-[#052e16]/90 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/90 border-[#991b1b] text-[#f87171]'
-            }`}>
-              <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
-              {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-              <p className="text-sm font-bold">{notification.msg}</p>
+        <div className="fixed top-4 right-4 z-50 w-[90%] md:w-auto max-w-md flex flex-col gap-2">
+          {notifications.map(notification => (
+            <div key={notification.id} className="animate-in slide-in-from-right-4 fade-in duration-300">
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
+                notification.type === 'success' ? 'bg-[#052e16]/90 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/90 border-[#991b1b] text-[#f87171]'
+              }`}>
+                <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
+                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+                <p className="text-sm font-bold">{notification.msg}</p>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* PENALIZAÇÕES NOTIFICATIONS */}
         {penalizacoes.filter(p => p.usuario_id === currentUser.id).map(penalizacao => (
@@ -1294,7 +1385,24 @@ export default function App() {
         ))}
 
         {/* SCROLLABLE CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+        <main 
+          className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 relative"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Pull to refresh indicator */}
+          <div 
+            className="md:hidden absolute left-0 right-0 flex justify-center items-center overflow-hidden transition-all duration-200 z-50 pointer-events-none"
+            style={{ 
+              height: `${pullDistance}px`,
+              opacity: pullDistance / 100
+            }}
+          >
+            <div className={`bg-[#121212] border border-white/10 rounded-full p-2 shadow-lg ${isRefreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullDistance * 2}deg)` }}>
+              <ArrowRight className="w-5 h-5 text-[#00A3FF] rotate-90" />
+            </div>
+          </div>
           <div className="max-w-5xl mx-auto">
             
             {/* RECOMPENSAS TAB (LOJA) */}
@@ -1576,6 +1684,21 @@ export default function App() {
                               {sub.status.toUpperCase()}
                             </div>
                           </div>
+                          {sub.url_prova && (
+                            <div 
+                              className="w-full h-24 rounded-xl overflow-hidden border border-white/10 relative cursor-pointer group mt-2"
+                              onClick={() => setLightboxImage(sub.url_prova)}
+                            >
+                              {sub.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
+                                <video src={sub.url_prova} className="w-full h-full object-cover" />
+                              ) : (
+                                <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
+                              )}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
+                                Ampliar
+                              </div>
+                            </div>
+                          )}
                           {sub.status === 'rejeitado' && sub.motivo_rejeicao && (
                             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
                               <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">Motivo da Rejeição:</p>
@@ -1838,9 +1961,26 @@ export default function App() {
                         </div>
                         
                         {atividade.type === 'missao' ? (
-                          <p className="text-sm text-gray-300 break-words">
-                            Completou a missão <span className="font-bold text-white">{atividade.data.tarefa_nome}</span> e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{atividade.data.pontos} pts</span>!
-                          </p>
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-300 break-words">
+                              Completou a missão <span className="font-bold text-white">{atividade.data.tarefa_nome}</span> e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{atividade.data.pontos} pts</span>!
+                            </p>
+                            {atividade.data.url_prova && (
+                              <div 
+                                className="w-full h-32 rounded-xl overflow-hidden border border-white/10 relative cursor-pointer group"
+                                onClick={() => setLightboxImage(atividade.data.url_prova)}
+                              >
+                                {atividade.data.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
+                                  <video src={atividade.data.url_prova} className="w-full h-full object-cover" />
+                                ) : (
+                                  <img src={atividade.data.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
+                                )}
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
+                                  Ampliar
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <p className="text-sm text-gray-300 break-words">
                             Resgatou <span className="font-bold text-white">{atividade.data.produto_nome}</span> por <span className="text-[#00F0FF] font-bold whitespace-nowrap">{atividade.data.preco_pontos} pts</span>!
@@ -1906,11 +2046,13 @@ export default function App() {
                           {sub.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
                             <video src={sub.url_prova} className="w-full h-full object-cover" controls />
                           ) : (
-                            <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
+                            <div className="w-full h-full relative cursor-pointer" onClick={() => setLightboxImage(sub.url_prova)}>
+                              <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
+                                Ampliar
+                              </div>
+                            </div>
                           )}
-                          <a href={sub.url_prova} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
-                            Ampliar
-                          </a>
                         </div>
 
                         <div className="flex gap-2 w-full md:w-auto md:flex-col">
@@ -2567,6 +2709,28 @@ export default function App() {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button 
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 right-4 p-3 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-full transition-all z-10"
+          >
+            <XCircle className="w-8 h-8" />
+          </button>
+          <img 
+            src={lightboxImage} 
+            alt="Fullscreen" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+            referrerPolicy="no-referrer"
+          />
         </div>
       )}
     </div>
