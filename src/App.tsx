@@ -1961,29 +1961,12 @@ export default function App() {
                         </div>
                         
                         {atividade.type === 'missao' ? (
-                          <div className="space-y-3">
-                            <p className="text-sm text-gray-300 break-words">
-                              Completou a missão <span className="font-bold text-white">{atividade.data.tarefa_nome}</span> e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{atividade.data.pontos} pts</span>!
-                            </p>
-                            {atividade.data.url_prova && (
-                              <div 
-                                className="w-full h-32 rounded-xl overflow-hidden border border-white/10 relative cursor-pointer group"
-                                onClick={() => setLightboxImage(atividade.data.url_prova)}
-                              >
-                                {atividade.data.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
-                                  <video src={atividade.data.url_prova} className="w-full h-full object-cover" />
-                                ) : (
-                                  <img src={atividade.data.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
-                                )}
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
-                                  Ampliar
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          <p className="text-sm text-gray-300 break-words">
+                            Completou uma missão e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{atividade.data.pontos} pts</span>!
+                          </p>
                         ) : (
                           <p className="text-sm text-gray-300 break-words">
-                            Resgatou <span className="font-bold text-white">{atividade.data.produto_nome}</span> por <span className="text-[#00F0FF] font-bold whitespace-nowrap">{atividade.data.preco_pontos} pts</span>!
+                            Resgatou uma recompensa por <span className="text-[#00F0FF] font-bold whitespace-nowrap">{atividade.data.preco_pontos} pts</span>!
                           </p>
                         )}
                       </div>
