@@ -14,6 +14,10 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
+  const formatPoints = (points: number) => {
+    return (points || 0).toLocaleString('pt-BR');
+  };
+
   const [activeTab, setActiveTab] = useState<'placar' | 'enviar' | 'recompensas' | 'admin' | 'mural'>('recompensas');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -80,6 +84,7 @@ export default function App() {
   const [authName, setAuthName] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showRankingsModal, setShowRankingsModal] = useState(false);
+  const [confirmResgate, setConfirmResgate] = useState<any | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('soundEnabled') !== 'false');
   
@@ -981,12 +986,14 @@ export default function App() {
           <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-50 flex flex-col gap-2">
             {notifications.map(notification => (
               <div key={notification.id} className="animate-in slide-in-from-top-4 fade-in duration-300">
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
-                  notification.type === 'success' ? 'bg-[#052e16]/80 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/80 border-[#991b1b] text-[#f87171]'
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden bg-[#121212] ${
+                  notification.type === 'success' ? 'border-[#00A3FF]/30 text-white' : 'border-red-500/30 text-white'
                 }`}>
-                  <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
-                  {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-                  <p className="text-sm font-bold">{notification.msg}</p>
+                  <div className={`absolute bottom-0 left-0 h-1 opacity-30 animate-[shrink_3s_linear_forwards] ${
+                    notification.type === 'success' ? 'bg-[#00A3FF]' : 'bg-red-500'
+                  }`} />
+                  {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-[#00A3FF]" /> : <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500" />}
+                  <p className="text-sm font-medium">{notification.msg}</p>
                 </div>
               </div>
             ))}
@@ -1030,7 +1037,7 @@ export default function App() {
               <form onSubmit={handleAuth} className="space-y-5">
               {authMode === 'register' && !inviteCode ? (
                 <div className="p-8 bg-[#121212] rounded-3xl border border-white/5 flex flex-col items-center text-center gap-4">
-                  <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-2">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-gray-400 mb-2">
                     <Lock className="w-8 h-8" />
                   </div>
                   <div>
@@ -1236,7 +1243,7 @@ export default function App() {
             {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
               <div className="mt-1">
                 <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
-                  <span>{currentUser.pontos_acumulados || 0} pts</span>
+                  <span>{formatPoints(currentUser.pontos_acumulados)} pts</span>
                   <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
                 </div>
                 <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
@@ -1347,12 +1354,14 @@ export default function App() {
         <div className="fixed top-4 right-4 z-50 w-[90%] md:w-auto max-w-md flex flex-col gap-2">
           {notifications.map(notification => (
             <div key={notification.id} className="animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden ${
-                notification.type === 'success' ? 'bg-[#052e16]/90 border-[#166534] text-[#4ade80]' : 'bg-[#450a0a]/90 border-[#991b1b] text-[#f87171]'
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl relative overflow-hidden bg-[#121212] ${
+                notification.type === 'success' ? 'border-[#00A3FF]/30 text-white' : 'border-red-500/30 text-white'
               }`}>
-                <div className="absolute bottom-0 left-0 h-1 bg-current opacity-30 animate-[shrink_3s_linear_forwards]" />
-                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-                <p className="text-sm font-bold">{notification.msg}</p>
+                <div className={`absolute bottom-0 left-0 h-1 opacity-30 animate-[shrink_3s_linear_forwards] ${
+                  notification.type === 'success' ? 'bg-[#00A3FF]' : 'bg-red-500'
+                }`} />
+                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-[#00A3FF]" /> : <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500" />}
+                <p className="text-sm font-medium">{notification.msg}</p>
               </div>
             </div>
           ))}
@@ -1361,21 +1370,21 @@ export default function App() {
         {/* PENALIZAÇÕES NOTIFICATIONS */}
         {penalizacoes.filter(p => p.usuario_id === currentUser.id).map(penalizacao => (
           <div key={penalizacao.id} className="fixed top-20 right-4 z-40 w-[90%] md:w-auto max-w-md animate-in slide-in-from-right-8 fade-in duration-500">
-            <div className="flex items-start gap-4 p-5 rounded-2xl shadow-[0_10px_40px_rgba(255,0,0,0.2)] border border-red-500/30 bg-[#121212]/95 backdrop-blur-xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-red-500 shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
-              <div className="p-2 bg-red-500/10 rounded-xl text-red-500 shrink-0">
+            <div className="flex items-start gap-4 p-5 rounded-2xl shadow-2xl border border-white/10 bg-[#121212]/95 backdrop-blur-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
+              <div className="p-2 bg-white/5 rounded-xl text-red-400 shrink-0">
                 <AlertCircle className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h3 className="text-red-400 font-black text-lg mb-1">Penalidade Aplicada</h3>
-                <p className="text-white text-sm font-medium mb-2">Você perdeu <span className="text-red-400 font-bold">{penalizacao.pontos} pontos</span>.</p>
-                <div className="bg-[#050505] border border-white/5 rounded-lg p-3 mb-3">
-                  <p className="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">Motivo:</p>
-                  <p className="text-gray-200 text-sm italic">"{penalizacao.motivo}"</p>
+                <h3 className="text-white font-black text-lg mb-1">Penalidade Aplicada</h3>
+                <p className="text-gray-300 text-sm font-medium mb-2">Você perdeu <span className="text-red-400 font-bold">{penalizacao.pontos} pontos</span>.</p>
+                <div className="bg-white/5 border border-white/5 rounded-lg p-3 mb-3">
+                  <p className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1">Motivo:</p>
+                  <p className="text-gray-300 text-sm italic">"{penalizacao.motivo}"</p>
                 </div>
                 <button 
                   onClick={() => handleClosePenalizacao(penalizacao.id)}
-                  className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm font-bold transition-colors border border-red-500/20"
+                  className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors border border-white/10"
                 >
                   Estou ciente
                 </button>
@@ -1429,7 +1438,7 @@ export default function App() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Seu Saldo</p>
-                  <p className="text-2xl font-black">{currentUser?.pontos || 0}</p>
+                  <p className="text-2xl font-black">{formatPoints(currentUser?.pontos)}</p>
                 </div>
               </div>
             </div>
@@ -1442,12 +1451,14 @@ export default function App() {
                 <div className="space-y-12">
                   {/* AVAILABLE PRODUCTS */}
                   {availableProducts.length === 0 && lockedProducts.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4">
-                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
-                        <Gift className="w-8 h-8 text-gray-400" />
+                    <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-b from-[#00F0FF]/5 to-transparent pointer-events-none"></div>
+                      <div className="w-20 h-20 bg-[#00F0FF]/10 rounded-full flex items-center justify-center mb-2 relative">
+                        <div className="absolute inset-0 bg-[#00F0FF]/20 rounded-full blur-xl animate-pulse"></div>
+                        <Gift className="w-10 h-10 text-[#00F0FF] relative z-10" />
                       </div>
-                      <h3 className="text-xl font-bold text-white">Nenhum prêmio disponível</h3>
-                      <p className="text-sm">A loja está sendo reabastecida. Volte em breve!</p>
+                      <h3 className="text-2xl font-black text-white tracking-tight relative z-10">Loja em reabastecimento...</h3>
+                      <p className="text-sm text-gray-400 max-w-sm relative z-10">Nenhum prêmio disponível no momento. Continue juntando pontos enquanto preparamos novidades!</p>
                     </div>
                   ) : (
                     <>
@@ -1457,8 +1468,10 @@ export default function App() {
                             <Gift className="w-5 h-5 text-[#00A3FF]" /> Resgate Agora
                           </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {availableProducts.map(produto => (
-                          <div key={produto.id} className="bg-[#121212] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group border border-[#00A3FF]/30 hover:border-[#00A3FF]">
+                        {availableProducts.map(produto => {
+                          const isPremium = produto.preco_pontos >= 1000;
+                          return (
+                          <div key={produto.id} className={`bg-[#121212] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group border ${isPremium ? 'border-amber-500/50 hover:border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.15)] hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]' : 'border-[#00A3FF]/30 hover:border-[#00A3FF]'}`}>
                             <div className="aspect-[4/3] w-full bg-[#0A0A0A] relative overflow-hidden">
                               <img 
                                 src={produto.imagem_url} 
@@ -1466,9 +1479,9 @@ export default function App() {
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 referrerPolicy="no-referrer"
                               />
-                              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border border-[#00F0FF]/30">
-                                <Star className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
-                                <span className="font-bold text-sm text-[#00F0FF]">{produto.preco_pontos}</span>
+                              <div className={`absolute top-3 right-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border ${isPremium ? 'border-amber-400/50' : 'border-[#00F0FF]/30'}`}>
+                                <Star className={`w-3.5 h-3.5 ${isPremium ? 'text-amber-400 fill-amber-400' : 'text-[#00F0FF] fill-[#00F0FF]'}`} />
+                                <span className={`font-bold text-sm ${isPremium ? 'text-amber-400' : 'text-[#00F0FF]'}`}>{formatPoints(produto.preco_pontos)}</span>
                               </div>
                             </div>
                             <div className="p-5 flex flex-col flex-1">
@@ -1484,7 +1497,7 @@ export default function App() {
                               
                               <div className="mt-auto">
                                 <button 
-                                  onClick={() => handleResgate(produto)}
+                                  onClick={() => setConfirmResgate(produto)}
                                   className="w-full py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 bg-[#00A3FF] text-white hover:bg-[#0077CC] shadow-md shadow-[#00A3FF]/20 active:scale-[0.98]"
                                 >
                                   Resgatar Prêmio
@@ -1492,7 +1505,7 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-                        ))}
+                        )})}
                       </div>
                     </div>
                   )}
@@ -1508,9 +1521,10 @@ export default function App() {
                           const isOutOfStock = produto.estoque <= 0;
                           const progress = Math.min(100, ((currentUser?.pontos || 0) / produto.preco_pontos) * 100);
                           const pointsNeeded = produto.preco_pontos - (currentUser?.pontos || 0);
+                          const isPremium = produto.preco_pontos >= 1000;
 
                           return (
-                            <div key={produto.id} className={`bg-[#121212] rounded-3xl overflow-hidden shadow-sm transition-all duration-300 flex flex-col border border-white/5 ${isOutOfStock ? 'opacity-70' : ''}`}>
+                            <div key={produto.id} className={`bg-[#121212] rounded-3xl overflow-hidden shadow-sm transition-all duration-300 flex flex-col border ${isPremium && !isOutOfStock ? 'border-amber-500/20' : 'border-white/5'} ${isOutOfStock ? 'opacity-70' : ''}`}>
                               <div className="aspect-[4/3] w-full bg-[#0A0A0A] relative overflow-hidden">
                                 <img 
                                   src={produto.imagem_url} 
@@ -1523,9 +1537,9 @@ export default function App() {
                                     <span className="text-white font-black text-lg px-6 py-2 bg-black/50 border border-white/10 rounded-full shadow-md">Esgotado</span>
                                   </div>
                                 )}
-                                <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border border-white/10">
-                                  <Star className="w-3.5 h-3.5 text-gray-400" />
-                                  <span className="font-bold text-sm text-gray-300">{produto.preco_pontos}</span>
+                                <div className={`absolute top-3 right-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border ${isPremium && !isOutOfStock ? 'border-amber-500/30' : 'border-white/10'}`}>
+                                  <Star className={`w-3.5 h-3.5 ${isPremium && !isOutOfStock ? 'text-amber-500/50' : 'text-gray-400'}`} />
+                                  <span className={`font-bold text-sm ${isPremium && !isOutOfStock ? 'text-amber-500/50' : 'text-gray-400'}`}>{formatPoints(produto.preco_pontos)}</span>
                                 </div>
                               </div>
                               <div className="p-5 flex flex-col flex-1">
@@ -1543,7 +1557,7 @@ export default function App() {
                                   <div className="mb-6 space-y-2">
                                     <div className="flex justify-between text-xs font-bold">
                                       <span className="text-gray-400">Progresso</span>
-                                      <span className="text-[#00F0FF]">Faltam {pointsNeeded} pts</span>
+                                      <span className="text-[#00F0FF]">Faltam {formatPoints(pointsNeeded)} pts</span>
                                     </div>
                                     <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
                                       <div className="bg-[#00A3FF] h-2 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
@@ -1592,7 +1606,7 @@ export default function App() {
                               <CheckCircle2 className="w-4 h-4" /> Já Utilizado
                             </span>
                           ) : (
-                            <span className="px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-sm font-bold flex items-center gap-2 border border-emerald-500/20">
+                            <span className="px-4 py-2 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl text-sm font-bold flex items-center gap-2 border border-[#00A3FF]/20">
                               <Ticket className="w-4 h-4" /> Disponível para Uso
                             </span>
                           )}
@@ -1618,12 +1632,14 @@ export default function App() {
                 
                 <div className="space-y-4">
                   {tarefas.filter(t => t.ativo !== false).length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4">
-                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
-                        <Target className="w-8 h-8 text-gray-400" />
+                    <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-b from-[#00A3FF]/5 to-transparent pointer-events-none"></div>
+                      <div className="w-20 h-20 bg-[#00A3FF]/10 rounded-full flex items-center justify-center mb-2 relative">
+                        <div className="absolute inset-0 bg-[#00A3FF]/20 rounded-full blur-xl animate-pulse"></div>
+                        <Target className="w-10 h-10 text-[#00A3FF] relative z-10" />
                       </div>
-                      <h3 className="text-xl font-bold text-white">Nenhuma missão no momento</h3>
-                      <p className="text-sm">Fique de olho, novas missões podem aparecer a qualquer momento!</p>
+                      <h3 className="text-2xl font-black text-white tracking-tight relative z-10">Nenhuma missão no momento</h3>
+                      <p className="text-sm text-gray-400 max-w-sm relative z-10">Fique de olho! Novas missões podem aparecer a qualquer momento para você ganhar mais pontos.</p>
                     </div>
                   ) : (
                     tarefas.filter(t => t.ativo !== false).map(tarefa => (
@@ -1646,7 +1662,7 @@ export default function App() {
                             {tarefa.regras && <p className="text-xs text-[#00A3FF] mt-1 font-medium">Regras: {tarefa.regras}</p>}
                             <div className="flex items-center gap-1 mt-2">
                               <Star className="w-4 h-4 text-[#00F0FF] fill-[#00F0FF]" />
-                              <span className="text-sm font-black text-[#00F0FF]">+{tarefa.pontos} pts</span>
+                              <span className="text-sm font-black text-[#00F0FF]">+{formatPoints(tarefa.pontos)} pts</span>
                             </div>
                           </div>
                         </div>
@@ -1660,12 +1676,14 @@ export default function App() {
                 <div className="mt-12">
                   <h2 className="text-2xl font-black text-white tracking-tight mb-6">Minhas Missões</h2>
                   {submissoes.filter(s => s.usuario_id === currentUser.id).length === 0 ? (
-                    <div className="p-10 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-3">
-                      <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-1">
-                        <Camera className="w-6 h-6 text-gray-400" />
+                    <div className="p-10 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2 relative">
+                        <div className="absolute inset-0 bg-white/10 rounded-full blur-xl"></div>
+                        <Camera className="w-8 h-8 text-gray-400 relative z-10" />
                       </div>
-                      <p>Você ainda não enviou nenhuma missão.</p>
-                      <p className="text-sm text-gray-600">Escolha uma acima e comece a pontuar!</p>
+                      <h3 className="text-xl font-bold text-white relative z-10">Nenhuma missão enviada</h3>
+                      <p className="text-sm text-gray-400 max-w-xs relative z-10">Escolha uma missão acima, envie sua evidência e comece a ganhar pontos!</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1677,9 +1695,9 @@ export default function App() {
                               <p className="text-xs text-gray-400 mt-1">{new Date(sub.data_envio).toLocaleDateString('pt-BR')}</p>
                             </div>
                             <div className={`px-3 py-1 rounded-full text-xs font-bold border shrink-0 ${
-                              sub.status === 'aprovado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              sub.status === 'rejeitado' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                              sub.status === 'aprovado' ? 'bg-[#00A3FF]/10 text-[#00A3FF] border-[#00A3FF]/20' :
+                              sub.status === 'rejeitado' ? 'bg-white/5 text-gray-400 border-white/10' :
+                              'bg-white/5 text-gray-300 border-white/10'
                             }`}>
                               {sub.status.toUpperCase()}
                             </div>
@@ -1700,9 +1718,9 @@ export default function App() {
                             </div>
                           )}
                           {sub.status === 'rejeitado' && sub.motivo_rejeicao && (
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
-                              <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">Motivo da Rejeição:</p>
-                              <p className="text-sm text-red-200 italic break-words whitespace-pre-wrap w-full overflow-y-auto max-h-32">"{sub.motivo_rejeicao}"</p>
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3 mt-2">
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Motivo da Rejeição:</p>
+                              <p className="text-sm text-gray-300 italic break-words whitespace-pre-wrap w-full overflow-y-auto max-h-32">"{sub.motivo_rejeicao}"</p>
                             </div>
                           )}
                         </div>
@@ -1722,7 +1740,7 @@ export default function App() {
                   </button>
                   <div>
                     <h2 className="text-xl font-black text-white leading-tight">{tarefas.find(t => t.id === selectedTarefa)?.nome}</h2>
-                    <p className="text-sm text-[#00F0FF] font-bold">Valendo {tarefas.find(t => t.id === selectedTarefa)?.pontos} pts</p>
+                    <p className="text-sm text-[#00F0FF] font-bold">Valendo {formatPoints(tarefas.find(t => t.id === selectedTarefa)?.pontos)} pts</p>
                   </div>
                 </div>
 
@@ -1821,7 +1839,7 @@ export default function App() {
                             <span>{getUserTier(top3[1].pontos_acumulados || 0).icon}</span>
                             <span>{getUserTier(top3[1].pontos_acumulados || 0).name}</span>
                           </div>
-                          <span className="text-xs font-bold text-[#00F0FF] mt-1">{top3[1].pontos_acumulados || top3[1].pontos || 0} pts</span>
+                          <span className="text-xs font-bold text-[#00F0FF] mt-1">{formatPoints(top3[1].pontos_acumulados || top3[1].pontos)} pts</span>
                           <div className="w-16 sm:w-24 h-24 sm:h-32 bg-gradient-to-t from-[#7DD3FC]/20 to-transparent mt-3 rounded-t-lg border-t border-[#7DD3FC]/30"></div>
                         </div>
                       )}
@@ -1839,7 +1857,7 @@ export default function App() {
                             <span>{getUserTier(top3[0].pontos_acumulados || 0).icon}</span>
                             <span>{getUserTier(top3[0].pontos_acumulados || 0).name}</span>
                           </div>
-                          <span className="text-sm font-black text-[#00F0FF] mt-1">{top3[0].pontos_acumulados || top3[0].pontos || 0} pts</span>
+                          <span className="text-sm font-black text-[#00F0FF] mt-1">{formatPoints(top3[0].pontos_acumulados || top3[0].pontos)} pts</span>
                           <div className="w-20 sm:w-28 h-32 sm:h-40 bg-gradient-to-t from-[#00F0FF]/20 to-transparent mt-3 rounded-t-lg border-t border-[#00F0FF]/30"></div>
                         </div>
                       )}
@@ -1856,7 +1874,7 @@ export default function App() {
                             <span>{getUserTier(top3[2].pontos_acumulados || 0).icon}</span>
                             <span>{getUserTier(top3[2].pontos_acumulados || 0).name}</span>
                           </div>
-                          <span className="text-xs font-bold text-[#00F0FF] mt-1">{top3[2].pontos_acumulados || top3[2].pontos || 0} pts</span>
+                          <span className="text-xs font-bold text-[#00F0FF] mt-1">{formatPoints(top3[2].pontos_acumulados || top3[2].pontos)} pts</span>
                           <div className="w-14 sm:w-20 h-16 sm:h-20 bg-gradient-to-t from-[#0284C7]/20 to-transparent mt-3 rounded-t-lg border-t border-[#0284C7]/30"></div>
                         </div>
                       )}
@@ -1929,12 +1947,20 @@ export default function App() {
 
               if (atividades.length === 0) {
                 return (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4">
-                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
-                      <Star className="w-8 h-8 text-gray-400" />
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#00A3FF]/5 to-transparent pointer-events-none"></div>
+                    <div className="w-20 h-20 bg-[#00A3FF]/10 rounded-full flex items-center justify-center mb-2 relative">
+                      <div className="absolute inset-0 bg-[#00A3FF]/20 rounded-full blur-xl animate-pulse"></div>
+                      <Star className="w-10 h-10 text-[#00A3FF] relative z-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-white">Nenhuma atividade recente</h3>
-                    <p className="text-sm">O mural está silencioso... Seja o primeiro a completar uma missão!</p>
+                    <h3 className="text-2xl font-black text-white tracking-tight relative z-10">O mural está silencioso...</h3>
+                    <p className="text-sm text-gray-400 max-w-sm relative z-10">Ninguém completou missões ou resgatou prêmios recentemente. Seja o primeiro a quebrar o gelo!</p>
+                    <button 
+                      onClick={() => setActiveTab('enviar')}
+                      className="mt-4 px-6 py-3 bg-[#00A3FF] hover:bg-[#0082CC] text-white font-bold rounded-xl transition-colors shadow-[0_0_15px_rgba(0,163,255,0.3)] hover:shadow-[0_0_25px_rgba(0,163,255,0.5)] relative z-10"
+                    >
+                      Fazer uma Missão
+                    </button>
                   </div>
                 );
               }
@@ -1945,13 +1971,14 @@ export default function App() {
                     <div key={atividade.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       {/* Timeline dot */}
                       <div className={`flex items-center justify-center w-12 h-12 rounded-full border-4 border-[#0A0A0A] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${
-                        atividade.type === 'missao' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#00A3FF]/20 text-[#00F0FF]'
+                        atividade.type === 'missao' ? 'bg-amber-500/20 text-amber-400' : 'bg-[#00A3FF]/20 text-[#00F0FF]'
                       }`}>
                         {atividade.type === 'missao' ? <Star className="w-5 h-5 fill-current" /> : <Gift className="w-5 h-5" />}
                       </div>
                       
                       {/* Content Card */}
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-4 rounded-2xl bg-[#121212] border border-white/5 shadow-sm hover:border-white/10 transition-colors overflow-hidden">
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-4 rounded-2xl bg-[#121212] border border-white/5 shadow-sm hover:border-white/10 hover:bg-white/5 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative group/card">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                         <div className="flex items-center gap-3 mb-2">
                           <img src={atividade.user?.avatar} alt={atividade.user?.nome} className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0" />
                           <div className="min-w-0">
@@ -1962,11 +1989,11 @@ export default function App() {
                         
                         {atividade.type === 'missao' ? (
                           <p className="text-sm text-gray-300 break-words">
-                            Completou uma missão e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{atividade.data.pontos} pts</span>!
+                            Completou uma missão e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{formatPoints(atividade.data.pontos)} pts</span>!
                           </p>
                         ) : (
                           <p className="text-sm text-gray-300 break-words">
-                            Resgatou uma recompensa por <span className="text-[#00F0FF] font-bold whitespace-nowrap">{atividade.data.preco_pontos} pts</span>!
+                            Resgatou uma recompensa por <span className="text-[#00F0FF] font-bold whitespace-nowrap">{formatPoints(atividade.data.preco_pontos)} pts</span>!
                           </p>
                         )}
                       </div>
@@ -2008,9 +2035,14 @@ export default function App() {
               
               <div className="p-4 relative z-10">
                 {submissoes.filter(s => s.status === 'pendente').length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4">
-                    <CheckCircle2 className="w-12 h-12 text-[#00A3FF]/30" />
-                    Nenhuma missão pendente. Tudo limpo! ✨
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#00A3FF]/5 to-transparent pointer-events-none"></div>
+                    <div className="w-16 h-16 bg-[#00A3FF]/10 rounded-full flex items-center justify-center mb-2 relative">
+                      <div className="absolute inset-0 bg-[#00A3FF]/20 rounded-full blur-xl"></div>
+                      <CheckCircle2 className="w-8 h-8 text-[#00A3FF] relative z-10" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white relative z-10">Tudo limpo! ✨</h3>
+                    <p className="text-sm text-gray-400 relative z-10">Nenhuma missão pendente de avaliação no momento.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -2041,13 +2073,13 @@ export default function App() {
                         <div className="flex gap-2 w-full md:w-auto md:flex-col">
                           <button 
                             onClick={() => handleAprovar(sub)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-emerald-500/20"
+                            className="flex-1 md:flex-none px-5 py-3 bg-white/5 text-emerald-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                           >
                             <CheckCircle2 className="w-4 h-4" /> Aprovar
                           </button>
                           <button 
                             onClick={() => handleRejeitar(sub)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20"
+                            className="flex-1 md:flex-none px-5 py-3 bg-white/5 text-red-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                           >
                             <XCircle className="w-4 h-4" /> Recusar
                           </button>
@@ -2070,9 +2102,14 @@ export default function App() {
               
               <div className="p-4 relative z-10">
                 {resgates.filter(r => r.status === 'pendente').length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4">
-                    <CheckCircle2 className="w-12 h-12 text-[#00A3FF]/30" />
-                    Nenhum resgate pendente. Tudo limpo! ✨
+                  <div className="p-12 text-center text-gray-500 font-medium bg-[#121212]/50 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#00A3FF]/5 to-transparent pointer-events-none"></div>
+                    <div className="w-16 h-16 bg-[#00A3FF]/10 rounded-full flex items-center justify-center mb-2 relative">
+                      <div className="absolute inset-0 bg-[#00A3FF]/20 rounded-full blur-xl"></div>
+                      <CheckCircle2 className="w-8 h-8 text-[#00A3FF] relative z-10" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white relative z-10">Tudo limpo! ✨</h3>
+                    <p className="text-sm text-gray-400 relative z-10">Nenhum resgate pendente de aprovação no momento.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -2089,13 +2126,13 @@ export default function App() {
                         <div className="flex gap-2 w-full md:w-auto md:flex-col">
                           <button 
                             onClick={() => handleAprovarResgate(resgate)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-emerald-500/20"
+                            className="flex-1 md:flex-none px-5 py-3 bg-white/5 text-emerald-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                           >
                             <CheckCircle2 className="w-4 h-4" /> Aprovar
                           </button>
                           <button 
                             onClick={() => handleRejeitarResgate(resgate)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20"
+                            className="flex-1 md:flex-none px-5 py-3 bg-white/5 text-red-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                           >
                             <XCircle className="w-4 h-4" /> Recusar
                           </button>
@@ -2534,7 +2571,7 @@ export default function App() {
                           ) : (
                             <button 
                               onClick={() => handleMarkUsado(resgate.id)}
-                              className="flex-1 md:flex-none px-5 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-emerald-500/20"
+                              className="flex-1 md:flex-none px-5 py-3 bg-white/5 text-emerald-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                             >
                               <CheckCircle2 className="w-4 h-4" /> Marcar como Usado
                             </button>
@@ -2585,14 +2622,14 @@ export default function App() {
                         <div className="flex gap-2 ml-auto sm:ml-0">
                           <button 
                             onClick={() => handlePenalizar(user.id)}
-                            className="px-4 py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-orange-500/20"
+                            className="px-4 py-2 bg-white/5 text-orange-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                             title="Remover pontos"
                           >
                             <AlertCircle className="w-4 h-4" /> Penalizar
                           </button>
                           <button 
                             onClick={() => handleRemoverUsuario(user.id)}
-                            className="px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-red-500/20"
+                            className="px-4 py-2 bg-white/5 text-red-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
                             title="Excluir usuário"
                           >
                             <XCircle className="w-4 h-4" /> Remover
@@ -2630,6 +2667,49 @@ export default function App() {
 
       </div>
       
+      {/* Rankings Modal */}
+      {/* Confirm Resgate Modal */}
+      {confirmResgate && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setConfirmResgate(null)}
+        >
+          <div 
+            className="w-full max-w-sm bg-[#121212] rounded-[32px] border border-white/10 p-6 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-20 h-20 bg-[#00A3FF]/10 rounded-full flex items-center justify-center mb-4 relative">
+              <div className="absolute inset-0 bg-[#00A3FF]/20 rounded-full blur-xl"></div>
+              <Gift className="w-10 h-10 text-[#00A3FF] relative z-10" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Confirmar Resgate</h3>
+            
+            <p className="text-gray-400 mb-6">
+              Deseja realmente resgatar <strong className="text-white">{confirmResgate.nome}</strong> por <strong className="text-[#00F0FF]">{formatPoints(confirmResgate.pontos)} pts</strong>?
+            </p>
+            
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setConfirmResgate(null)}
+                className="flex-1 py-3.5 rounded-2xl text-sm font-bold bg-white/5 text-white hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  handleResgate(confirmResgate);
+                  setConfirmResgate(null);
+                }}
+                className="flex-1 py-3.5 rounded-2xl text-sm font-bold bg-[#00A3FF] text-white hover:bg-[#0077CC] shadow-md shadow-[#00A3FF]/20 transition-all active:scale-[0.98]"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rankings Modal */}
       {showRankingsModal && (
         <div 
