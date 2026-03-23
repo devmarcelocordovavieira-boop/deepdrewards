@@ -5,7 +5,8 @@ import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
-  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX
+  Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX,
+  Copy
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -2050,11 +2051,23 @@ export default function App() {
                       <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden">
                         <div className="space-y-2 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-lg truncate">{sub.usuario_nome}</span>
+                            <span className="font-bold text-white text-lg truncate select-text selection:bg-[#00A3FF]/30 selection:text-white">{sub.usuario_nome}</span>
                             <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)] whitespace-nowrap">+{sub.pontos} pts</span>
                           </div>
-                          <div className="text-sm font-bold text-gray-300 truncate">{sub.tarefa_nome}</div>
-                          <p className="text-sm text-gray-400 bg-[#050505] p-3 rounded-xl border border-white/5 break-words whitespace-pre-wrap overflow-y-auto max-h-32 w-full">{sub.descricao}</p>
+                          <div className="text-sm font-bold text-gray-300 truncate select-text selection:bg-[#00A3FF]/30 selection:text-white">{sub.tarefa_nome}</div>
+                          <div className="relative group/desc">
+                            <p className="text-sm text-gray-400 bg-[#050505] p-3 rounded-xl border border-white/5 break-words whitespace-pre-wrap overflow-y-auto max-h-32 w-full select-text selection:bg-[#00A3FF]/30 selection:text-white">{sub.descricao}</p>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(sub.descricao);
+                                showNotification('Texto copiado!', 'success', 'none');
+                              }}
+                              className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg opacity-0 group-hover/desc:opacity-100 transition-opacity"
+                              title="Copiar texto"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         
                         <div className="w-full md:w-36 h-36 bg-[#0A0A0A] rounded-2xl border border-white/10 relative flex-shrink-0 group overflow-hidden">
@@ -2117,10 +2130,10 @@ export default function App() {
                       <div key={resgate.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden">
                         <div className="space-y-2 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-lg truncate">{resgate.usuario_nome}</span>
+                            <span className="font-bold text-white text-lg truncate select-text selection:bg-[#00A3FF]/30 selection:text-white">{resgate.usuario_nome}</span>
                             <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)] whitespace-nowrap">-{resgate.preco_pontos} pts</span>
                           </div>
-                          <div className="text-sm font-bold text-gray-300 truncate">{resgate.produto_nome}</div>
+                          <div className="text-sm font-bold text-gray-300 truncate select-text selection:bg-[#00A3FF]/30 selection:text-white">{resgate.produto_nome}</div>
                         </div>
                         
                         <div className="flex gap-2 w-full md:w-auto md:flex-col">
@@ -2557,10 +2570,10 @@ export default function App() {
                       <div key={resgate.id} className={`p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center rounded-2xl transition-all border w-full overflow-hidden ${resgate.usado ? 'bg-[#050505] border-white/5 opacity-75' : 'bg-[#121212]/80 border-white/5 hover:border-[#00A3FF]/30 hover:bg-white/5 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)]'}`}>
                         <div className="space-y-1 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-lg truncate">{resgate.usuario_nome}</span>
+                            <span className="font-bold text-white text-lg truncate select-text selection:bg-[#00A3FF]/30 selection:text-white">{resgate.usuario_nome}</span>
                             <span className="text-sm text-gray-500 shrink-0">• {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}</span>
                           </div>
-                          <div className="text-sm font-bold text-[#00F0FF]">{resgate.produto_nome}</div>
+                          <div className="text-sm font-bold text-[#00F0FF] select-text selection:bg-[#00A3FF]/30 selection:text-white">{resgate.produto_nome}</div>
                         </div>
                         
                         <div className="flex gap-2 w-full md:w-auto">
