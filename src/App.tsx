@@ -1240,11 +1240,28 @@ export default function App() {
               </div>
             </div>
             
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Moedas</span>
+                <div className="flex items-center gap-1">
+                  <Star className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
+                  <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos)}</span>
+                </div>
+              </div>
+              <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Ranking</span>
+                <div className="flex items-center gap-1">
+                  <Trophy className="w-3 h-3 text-amber-400" />
+                  <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos_acumulados)}</span>
+                </div>
+              </div>
+            </div>
+            
             {/* Progress Bar */}
             {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
               <div className="mt-1">
                 <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
-                  <span>{formatPoints(currentUser.pontos_acumulados)} pts</span>
+                  <span>Progresso para {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName}</span>
                   <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
                 </div>
                 <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
@@ -1322,33 +1339,52 @@ export default function App() {
           </div>
           
           {/* Progress Bar Mobile */}
-          {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
-            <div className="w-full">
-              <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
-                <div className={`flex items-center gap-1 font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
-                  <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
-                  <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+          <div className="w-full mt-2">
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Moedas</span>
+                <div className="flex items-center gap-1">
+                  <Star className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
+                  <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos)}</span>
                 </div>
-                <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
               </div>
-              <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
-                <div 
-                  className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out`}
-                  style={{ 
-                    width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
-                    backgroundColor: 'currentColor',
-                    color: getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '') === 'white/60' ? '#9ca3af' : 
-                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'cyan' ? '#22d3ee' :
-                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'yellow' ? '#facc15' :
-                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
-                           getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
-                  }}
-                >
-                  <div className="absolute inset-0 bg-white/20"></div>
+              <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Ranking</span>
+                <div className="flex items-center gap-1">
+                  <Trophy className="w-3 h-3 text-amber-400" />
+                  <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos_acumulados)}</span>
                 </div>
               </div>
             </div>
-          )}
+            
+            {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
+              <>
+                <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
+                  <div className={`flex items-center gap-1 font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
+                    <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
+                    <span>{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
+                  </div>
+                  <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
+                </div>
+                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
+                  <div 
+                    className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out`}
+                    style={{ 
+                      width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
+                      backgroundColor: 'currentColor',
+                      color: getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '') === 'white/60' ? '#9ca3af' : 
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'cyan' ? '#22d3ee' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'yellow' ? '#facc15' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-white/20"></div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </header>
 
         {/* NOTIFICATION */}
@@ -2699,7 +2735,7 @@ export default function App() {
             <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Confirmar Resgate</h3>
             
             <p className="text-gray-400 mb-6">
-              Deseja realmente resgatar <strong className="text-white">{confirmResgate.nome}</strong> por <strong className="text-[#00F0FF]">{formatPoints(confirmResgate.pontos)} pts</strong>?
+              Deseja realmente resgatar <strong className="text-white">{confirmResgate.nome}</strong> por <strong className="text-[#00F0FF]">{formatPoints(confirmResgate.preco_pontos)} pts</strong>?
             </p>
             
             <div className="flex gap-3 w-full">
