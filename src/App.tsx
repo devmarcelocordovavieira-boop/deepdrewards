@@ -6,7 +6,7 @@ import {
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
   Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX,
-  Copy
+  Copy, Bird
 } from 'lucide-react';
 
 // --- SUPABASE CLIENT ---
@@ -1242,9 +1242,9 @@ export default function App() {
             
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Moedas</span>
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Corujitas</span>
                 <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
+                  <Bird className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
                   <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos)}</span>
                 </div>
               </div>
@@ -1300,6 +1300,9 @@ export default function App() {
             {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             {soundEnabled ? 'Som Ativado' : 'Som Desativado'}
           </button>
+          <a href="/" className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
+            <ArrowLeft className="w-5 h-5" /> Voltar para o Hub
+          </a>
           <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
             <LogOut className="w-5 h-5" /> Sair
           </button>
@@ -1313,6 +1316,9 @@ export default function App() {
         <header className="md:hidden bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3 flex flex-col gap-3 shadow-[0_4px_24px_rgba(0,163,255,0.05)]">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
+              <a href="/" className="p-2 -ml-2 text-gray-500 hover:text-white transition-colors cursor-pointer" title="Voltar para o Hub">
+                <ArrowLeft className="w-5 h-5" />
+              </a>
               <div className="h-10 flex items-center justify-center">
                 <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
                 <Cpu className="w-5 h-5 text-[#00A3FF] hidden" />
@@ -1342,9 +1348,9 @@ export default function App() {
           <div className="w-full mt-2">
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Moedas</span>
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Corujitas</span>
                 <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
+                  <Bird className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
                   <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos)}</span>
                 </div>
               </div>
