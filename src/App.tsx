@@ -1204,7 +1204,7 @@ export default function App() {
       <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#00f0ff08_1px,transparent_1px),linear-gradient(to_bottom,#00f0ff08_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
       
       {/* SIDEBAR (DESKTOP) */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#0A0A0A]/80 backdrop-blur-xl border-r border-white/10 z-40 sticky top-0 h-screen shadow-[4px_0_24px_rgba(0,163,255,0.05)]">
+      <aside className="hidden md:flex flex-col w-64 bg-[#0A0A0A]/80 backdrop-blur-xl border-r border-white/10 z-40 sticky top-0 h-screen overflow-y-auto shadow-[4px_0_24px_rgba(0,163,255,0.05)]">
         <div className="p-6 flex items-center gap-3 mb-6">
           <div className="h-12 flex items-center justify-center">
             <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
