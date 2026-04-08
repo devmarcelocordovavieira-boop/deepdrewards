@@ -26,6 +26,7 @@ export default function App() {
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [submissoes, setSubmissoes] = useState<any[]>([]);
   const [penalizacoes, setPenalizacoes] = useState<any[]>([]);
+  const [bonificacoes, setBonificacoes] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<{id: number, msg: string, type: 'success'|'error'}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -312,6 +313,10 @@ export default function App() {
     // Fetch penalizacoes
     const { data: penalizacoesData } = await supabase.from('penalizacoes').select('id, usuario_id, pontos, motivo, lida, created_at').eq('lida', false);
     if (penalizacoesData) setPenalizacoes(penalizacoesData);
+
+    // Fetch bonificacoes
+    const { data: bonificacoesData } = await supabase.from('bonificacoes').select('id, usuario_id, pontos, motivo, lida, created_at').eq('lida', false);
+    if (bonificacoesData) setBonificacoes(bonificacoesData);
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -854,6 +859,43 @@ export default function App() {
     }
   };
 
+  const handleBonificar = async (userId: string) => {
+    const pontosStr = window.prompt('Quantos pontos deseja adicionar a este usuário?');
+    if (!pontosStr) return;
+    const pontos = parseInt(pontosStr, 10);
+    if (isNaN(pontos) || pontos <= 0) return showNotification('Valor inválido.', 'error');
+
+    const motivo = window.prompt('Motivo da bonificação (opcional):');
+    if (motivo === null) return; // Cancelled
+
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      const newPontos = (user.pontos || 0) + pontos;
+      const newAcumulados = (user.pontos_acumulados || 0) + pontos;
+
+      const { error } = await supabase.from('usuarios').update({
+        pontos: newPontos,
+        pontos_acumulados: newAcumulados
+      }).eq('id', userId);
+
+      if (error) throw error;
+
+      // Register bonus notification
+      await supabase.from('bonificacoes').insert([{
+        usuario_id: userId,
+        pontos: pontos,
+        motivo: motivo || 'Sem motivo especificado'
+      }]);
+
+      showNotification(`Usuário bonificado em ${pontos} pontos.`, 'success');
+      fetchAllData();
+    } catch (error: any) {
+      showNotification(`Erro ao bonificar: ${error.message}`, 'error');
+    }
+  };
+
   const handlePenalizar = async (userId: string) => {
     const pontosStr = window.prompt('Quantos pontos deseja remover deste usuário?');
     if (!pontosStr) return;
@@ -900,6 +942,7 @@ export default function App() {
       await supabase.from('submissoes').delete().eq('usuario_id', userId);
       await supabase.from('resgates').delete().eq('usuario_id', userId);
       await supabase.from('penalizacoes').delete().eq('usuario_id', userId);
+      await supabase.from('bonificacoes').delete().eq('usuario_id', userId);
 
       const { data, error } = await supabase.from('usuarios').delete().eq('id', userId).select();
       if (error) throw error;
@@ -912,6 +955,15 @@ export default function App() {
       fetchAllData();
     } catch (error: any) {
       showNotification(`Erro ao remover usuário: ${error.message}`, 'error');
+    }
+  };
+
+  const handleCloseBonificacao = async (bonificacaoId: string) => {
+    try {
+      await supabase.from('bonificacoes').update({ lida: true }).eq('id', bonificacaoId);
+      setBonificacoes(prev => prev.filter(p => p.id !== bonificacaoId));
+    } catch (error) {
+      console.error('Erro ao fechar notificação de bonificação', error);
     }
   };
 
@@ -1427,6 +1479,32 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => handleClosePenalizacao(penalizacao.id)}
+                  className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors border border-white/10"
+                >
+                  Estou ciente
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* BONIFICAÇÕES NOTIFICATIONS */}
+        {bonificacoes.filter(p => p.usuario_id === currentUser.id).map(bonificacao => (
+          <div key={bonificacao.id} className="fixed top-20 right-4 z-40 w-[90%] md:w-auto max-w-md animate-in slide-in-from-right-8 fade-in duration-500">
+            <div className="flex items-start gap-4 p-5 rounded-2xl shadow-2xl border border-white/10 bg-[#121212]/95 backdrop-blur-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#00F0FF]/50"></div>
+              <div className="p-2 bg-white/5 rounded-xl text-[#00F0FF] shrink-0">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-black text-lg mb-1">Bonificação Recebida</h3>
+                <p className="text-gray-300 text-sm font-medium mb-2">Você ganhou <span className="text-[#00F0FF] font-bold">{bonificacao.pontos} pontos</span>!</p>
+                <div className="bg-white/5 border border-white/5 rounded-lg p-3 mb-3">
+                  <p className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1">Motivo:</p>
+                  <p className="text-gray-300 text-sm italic">"{bonificacao.motivo}"</p>
+                </div>
+                <button 
+                  onClick={() => handleCloseBonificacao(bonificacao.id)}
                   className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors border border-white/10"
                 >
                   Estou ciente
@@ -2675,6 +2753,13 @@ export default function App() {
                           <p className="text-xs text-gray-500">{user.pontos_acumulados} pts total</p>
                         </div>
                         <div className="flex gap-2 ml-auto sm:ml-0">
+                          <button 
+                            onClick={() => handleBonificar(user.id)}
+                            className="px-4 py-2 bg-white/5 text-[#00F0FF] hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
+                            title="Adicionar pontos"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Bonificar
+                          </button>
                           <button 
                             onClick={() => handlePenalizar(user.id)}
                             className="px-4 py-2 bg-white/5 text-orange-400 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
