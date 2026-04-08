@@ -2028,9 +2028,6 @@ export default function App() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-white text-base truncate">{user.nome}</span>
-                              {user.cargo === 'admin' && (
-                                <span className="px-2 py-0.5 bg-white/5 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider shrink-0 border border-white/10">Admin</span>
-                              )}
                             </div>
                             <div className={`flex items-center gap-1 text-[10px] font-bold mt-0.5 ${getUserTier(user.pontos_acumulados || 0).color}`}>
                               <span>{getUserTier(user.pontos_acumulados || 0).icon}</span>
@@ -2761,8 +2758,8 @@ export default function App() {
               <div className="p-4 relative z-10">
                 <div className="space-y-3">
                   {users
-                    .filter(u => u.cargo !== 'admin')
                     .filter(u => u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase()))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0))
                     .map(user => (
                     <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] gap-4 w-full overflow-hidden">
                       <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
@@ -2811,10 +2808,10 @@ export default function App() {
                       </div>
                     </div>
                   ))}
-                  {users.filter(u => u.cargo !== 'admin').length === 0 && (
-                    <div className="p-8 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum usuário comum encontrado.</div>
+                  {users.length === 0 && (
+                    <div className="p-8 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum usuário encontrado.</div>
                   )}
-                  {users.filter(u => u.cargo !== 'admin').length > 0 && users.filter(u => u.cargo !== 'admin' && (u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase()))).length === 0 && (
+                  {users.length > 0 && users.filter(u => u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase())).length === 0 && (
                     <div className="p-8 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum usuário corresponde à busca.</div>
                   )}
                 </div>
