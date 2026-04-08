@@ -234,7 +234,7 @@ export default function App() {
   const fetchUserData = async (userId: string) => {
     try {
       // Optimization: Select only necessary fields
-      const { data, error } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo').eq('id', userId).single();
+      const { data, error } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo, oculto_ranking').eq('id', userId).single();
       if (error) {
         // If user is not found in the database (e.g., deleted), sign them out
         await supabase.auth.signOut();
@@ -254,7 +254,7 @@ export default function App() {
 
   const fetchAllData = async () => {
     // Fetch users (Ranking based on pontos_acumulados) - Optimization: Select only necessary fields
-    const { data: usersData } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo').order('pontos_acumulados', { ascending: false });
+    const { data: usersData } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo, oculto_ranking').order('pontos_acumulados', { ascending: false });
     if (usersData) {
       setUsers(usersData.map(u => ({ ...u, avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.nome}` })));
     }
@@ -955,6 +955,18 @@ export default function App() {
       fetchAllData();
     } catch (error: any) {
       showNotification(`Erro ao remover usuário: ${error.message}`, 'error');
+    }
+  };
+
+  const handleToggleVisibilidadeRanking = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase.from('usuarios').update({ oculto_ranking: !currentStatus }).eq('id', userId);
+      if (error) throw error;
+      
+      showNotification(`Usuário ${!currentStatus ? 'ocultado' : 'visível'} no ranking.`, 'success');
+      fetchAllData();
+    } catch (error: any) {
+      showNotification(`Erro ao alterar visibilidade: ${error.message}`, 'error');
     }
   };
 
@@ -1938,7 +1950,7 @@ export default function App() {
             </div>
 
             {(() => {
-              const sortedUsers = [...users].sort((a, b) => (b.pontos_acumulados || b.pontos || 0) - (a.pontos_acumulados || a.pontos || 0));
+              const sortedUsers = [...users].filter(u => !u.oculto_ranking).sort((a, b) => (b.pontos_acumulados || b.pontos || 0) - (a.pontos_acumulados || a.pontos || 0));
               const top3 = sortedUsers.slice(0, 3);
               const rest = sortedUsers.slice(3);
               const currentUserRank = sortedUsers.findIndex(u => u.id === currentUser?.id) + 1;
@@ -2765,7 +2777,15 @@ export default function App() {
                           <p className="text-sm font-bold text-[#00F0FF]">{user.pontos} pts atuais</p>
                           <p className="text-xs text-gray-500">{user.pontos_acumulados} pts total</p>
                         </div>
-                        <div className="flex gap-2 ml-auto sm:ml-0">
+                        <div className="flex gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
+                          <button 
+                            onClick={() => handleToggleVisibilidadeRanking(user.id, user.oculto_ranking)}
+                            className={`px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10 ${user.oculto_ranking ? 'text-gray-400' : 'text-white'}`}
+                            title={user.oculto_ranking ? "Mostrar no Ranking" : "Ocultar do Ranking"}
+                          >
+                            {user.oculto_ranking ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {user.oculto_ranking ? "Oculto" : "Visível"}
+                          </button>
                           <button 
                             onClick={() => handleBonificar(user.id)}
                             className="px-4 py-2 bg-white/5 text-[#00F0FF] hover:bg-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10"
