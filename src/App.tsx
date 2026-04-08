@@ -315,7 +315,7 @@ export default function App() {
     if (penalizacoesData) setPenalizacoes(penalizacoesData);
 
     // Fetch bonificacoes
-    const { data: bonificacoesData } = await supabase.from('bonificacoes').select('id, usuario_id, pontos, motivo, lida, created_at').eq('lida', false);
+    const { data: bonificacoesData } = await supabase.from('bonificacoes').select('id, usuario_id, pontos, motivo, lida, created_at');
     if (bonificacoesData) setBonificacoes(bonificacoesData);
   };
 
@@ -1489,7 +1489,7 @@ export default function App() {
         ))}
 
         {/* BONIFICAÇÕES NOTIFICATIONS */}
-        {bonificacoes.filter(p => p.usuario_id === currentUser.id).map(bonificacao => (
+        {bonificacoes.filter(p => p.usuario_id === currentUser.id && !p.lida).map(bonificacao => (
           <div key={bonificacao.id} className="fixed top-20 right-4 z-40 w-[90%] md:w-auto max-w-md animate-in slide-in-from-right-8 fade-in duration-500">
             <div className="flex items-start gap-4 p-5 rounded-2xl shadow-2xl border border-white/10 bg-[#121212]/95 backdrop-blur-xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-[#00F0FF]/50"></div>
@@ -2063,6 +2063,13 @@ export default function App() {
                   date: new Date(r.data_resgate),
                   user: users.find(u => u.id === r.usuario_id),
                   data: r
+                })),
+                ...bonificacoes.map(b => ({
+                  id: `bon-${b.id}`,
+                  type: 'bonificacao',
+                  date: new Date(b.created_at),
+                  user: users.find(u => u.id === b.usuario_id),
+                  data: b
                 }))
               ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 50); // Últimas 50 atividades
 
@@ -2092,9 +2099,11 @@ export default function App() {
                     <div key={atividade.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       {/* Timeline dot */}
                       <div className={`flex items-center justify-center w-12 h-12 rounded-full border-4 border-[#0A0A0A] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${
-                        atividade.type === 'missao' ? 'bg-amber-500/20 text-amber-400' : 'bg-[#00A3FF]/20 text-[#00F0FF]'
+                        atividade.type === 'missao' ? 'bg-amber-500/20 text-amber-400' : 
+                        atividade.type === 'bonificacao' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'bg-[#00A3FF]/20 text-[#00F0FF]'
                       }`}>
-                        {atividade.type === 'missao' ? <Star className="w-5 h-5 fill-current" /> : <Gift className="w-5 h-5" />}
+                        {atividade.type === 'missao' ? <Star className="w-5 h-5 fill-current" /> : 
+                         atividade.type === 'bonificacao' ? <CheckCircle2 className="w-5 h-5" /> : <Gift className="w-5 h-5" />}
                       </div>
                       
                       {/* Content Card */}
@@ -2111,6 +2120,10 @@ export default function App() {
                         {atividade.type === 'missao' ? (
                           <p className="text-sm text-gray-300 break-words">
                             Completou uma missão e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{formatPoints(atividade.data.pontos)} pts</span>!
+                          </p>
+                        ) : atividade.type === 'bonificacao' ? (
+                          <p className="text-sm text-gray-300 break-words">
+                            Recebeu uma bonificação de <span className="text-[#00F0FF] font-bold whitespace-nowrap">+{formatPoints(atividade.data.pontos)} pts</span>!
                           </p>
                         ) : (
                           <p className="text-sm text-gray-300 break-words">
