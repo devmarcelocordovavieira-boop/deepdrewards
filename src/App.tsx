@@ -29,6 +29,7 @@ export default function App() {
   const [bonificacoes, setBonificacoes] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<{id: number, msg: string, type: 'success'|'error'}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadOlder, setLoadOlder] = useState(false);
 
   // Form states
   const [selectedTarefa, setSelectedTarefa] = useState('');
@@ -244,7 +245,7 @@ export default function App() {
         ...data,
         avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.nome}`
       });
-      fetchAllData();
+      fetchAllData(false);
     } catch (error) {
       setCurrentUser(null);
     } finally {
@@ -252,12 +253,38 @@ export default function App() {
     }
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (forceRefresh = true, fetchOlder = loadOlder) => {
+    // Cache Check
+    if (!forceRefresh && !fetchOlder) {
+      const cached = sessionStorage.getItem('deepgame_cache');
+      if (cached) {
+        try {
+          const { timestamp, data } = JSON.parse(cached);
+          if (Date.now() - timestamp < 1000 * 60 * 5) { // 5 minutes cache
+            setUsers(data.users);
+            setProducts(data.products);
+            setTarefas(data.tarefas);
+            setSubmissoes(data.submissoes);
+            setResgates(data.resgates);
+            setPenalizacoes(data.penalizacoes);
+            setBonificacoes(data.bonificacoes);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing cache', e);
+        }
+      }
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateFilter = fetchOlder ? null : thirtyDaysAgo.toISOString();
+    const limit = fetchOlder ? 1000 : 100;
+
     // Fetch users (Ranking based on pontos_acumulados) - Optimization: Select only necessary fields
     const { data: usersData } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo, oculto_ranking').order('pontos_acumulados', { ascending: false });
-    if (usersData) {
-      setUsers(usersData.map(u => ({ ...u, avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.nome}` })));
-    }
+    const mappedUsers = usersData ? usersData.map(u => ({ ...u, avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.nome}` })) : [];
+    if (usersData) setUsers(mappedUsers);
 
     // Fetch products
     const { data: productsData } = await supabase.from('produtos').select('id, nome, descricao, regras, preco_pontos, estoque, imagem_url, ordem, ativo').eq('ativo', true).order('ordem', { ascending: true }).order('created_at', { ascending: false });
@@ -268,13 +295,16 @@ export default function App() {
     if (tarefasData) setTarefas(tarefasData);
 
     // Fetch submissions
-    const { data: subData } = await supabase
+    let subQuery = supabase
       .from('submissoes')
       .select('id, usuario_id, tarefa_id, descricao, url_prova, status, data_envio, motivo_rejeicao, usuarios(nome), tipos_tarefas(nome, pontos)')
       .order('data_envio', { ascending: false });
+    if (dateFilter) subQuery = subQuery.gte('data_envio', dateFilter);
+    const { data: subData } = await subQuery.limit(limit);
       
+    let mappedSubmissoes: any[] = [];
     if (subData) {
-      const mapped = subData.map((s: any) => ({
+      mappedSubmissoes = subData.map((s: any) => ({
         id: s.id,
         usuario_id: s.usuario_id,
         usuario_nome: s.usuarios?.nome || 'Desconhecido',
@@ -287,16 +317,19 @@ export default function App() {
         data_envio: s.data_envio,
         motivo_rejeicao: s.motivo_rejeicao
       }));
-      setSubmissoes(mapped);
+      setSubmissoes(mappedSubmissoes);
     }
 
     // Fetch resgates
-    const { data: resgatesData } = await supabase
+    let resgatesQuery = supabase
       .from('resgates')
       .select('id, usuario_id, produto_id, data_resgate, usado, status, usuarios(nome), produtos(nome, preco_pontos)')
       .order('data_resgate', { ascending: false });
+    if (dateFilter) resgatesQuery = resgatesQuery.gte('data_resgate', dateFilter);
+    const { data: resgatesData } = await resgatesQuery.limit(limit);
+    let mappedResgates: any[] = [];
     if (resgatesData) {
-      const mappedResgates = resgatesData.map((r: any) => ({
+      mappedResgates = resgatesData.map((r: any) => ({
         id: r.id,
         usuario_id: r.usuario_id,
         usuario_nome: r.usuarios?.nome || 'Desconhecido',
@@ -315,8 +348,26 @@ export default function App() {
     if (penalizacoesData) setPenalizacoes(penalizacoesData);
 
     // Fetch bonificacoes
-    const { data: bonificacoesData } = await supabase.from('bonificacoes').select('id, usuario_id, pontos, motivo, lida, created_at');
+    let bonificacoesQuery = supabase.from('bonificacoes').select('id, usuario_id, pontos, motivo, lida, created_at').order('created_at', { ascending: false });
+    if (dateFilter) bonificacoesQuery = bonificacoesQuery.gte('created_at', dateFilter);
+    const { data: bonificacoesData } = await bonificacoesQuery.limit(limit);
     if (bonificacoesData) setBonificacoes(bonificacoesData);
+
+    // Save to cache
+    if (!fetchOlder) {
+      sessionStorage.setItem('deepgame_cache', JSON.stringify({
+        timestamp: Date.now(),
+        data: {
+          users: mappedUsers,
+          products: productsData,
+          tarefas: tarefasData,
+          submissoes: mappedSubmissoes,
+          resgates: mappedResgates,
+          penalizacoes: penalizacoesData,
+          bonificacoes: bonificacoesData
+        }
+      }));
+    }
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -1952,7 +2003,7 @@ export default function App() {
             {(() => {
               const sortedUsers = [...users].filter(u => !u.oculto_ranking).sort((a, b) => (b.pontos_acumulados || b.pontos || 0) - (a.pontos_acumulados || a.pontos || 0));
               const top3 = sortedUsers.slice(0, 3);
-              const rest = sortedUsers.slice(3);
+              const rest = sortedUsers.slice(3, loadOlder ? undefined : 20);
               const currentUserRank = sortedUsers.findIndex(u => u.id === currentUser?.id) + 1;
 
               return (
@@ -2043,6 +2094,21 @@ export default function App() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Load older button for Ranking */}
+                  {!loadOlder && sortedUsers.length > 23 && (
+                    <div className="flex justify-center mt-8">
+                      <button 
+                        onClick={() => {
+                          setLoadOlder(true);
+                          fetchAllData(true, true);
+                        }}
+                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-colors border border-white/10"
+                      >
+                        Ver ranking completo
+                      </button>
+                    </div>
+                  )}
                 </>
               );
             })()}
@@ -2145,6 +2211,21 @@ export default function App() {
                 </div>
               );
             })()}
+
+            {/* Load older button for Mural */}
+            {!loadOlder && (
+              <div className="flex justify-center mt-8">
+                <button 
+                  onClick={() => {
+                    setLoadOlder(true);
+                    fetchAllData(true, true);
+                  }}
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-colors border border-white/10"
+                >
+                  Carregar atividades antigas
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -2760,6 +2841,7 @@ export default function App() {
                   {users
                     .filter(u => u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase()))
                     .sort((a, b) => (b.pontos || 0) - (a.pontos || 0))
+                    .slice(0, debouncedSearchUser ? undefined : (loadOlder ? undefined : 20))
                     .map(user => (
                     <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] gap-4 w-full overflow-hidden">
                       <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
@@ -2813,6 +2895,19 @@ export default function App() {
                   )}
                   {users.length > 0 && users.filter(u => u.nome.toLowerCase().includes(debouncedSearchUser.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearchUser.toLowerCase())).length === 0 && (
                     <div className="p-8 text-center text-gray-500 font-medium bg-[#0A0A0A] rounded-2xl m-2 border border-white/5">Nenhum usuário corresponde à busca.</div>
+                  )}
+                  {!loadOlder && !debouncedSearchUser && users.length > 20 && (
+                    <div className="flex justify-center mt-4">
+                      <button 
+                        onClick={() => {
+                          setLoadOlder(true);
+                          fetchAllData(true, true);
+                        }}
+                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-colors border border-white/10"
+                      >
+                        Carregar todos os usuários
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
