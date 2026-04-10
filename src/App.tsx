@@ -1,13 +1,14 @@
 /// <reference types="vite/client" />
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import confetti from 'canvas-confetti';
 import { 
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
   Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX,
-  Copy, Bird
+  Copy, Bird, BarChart3, PieChart
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 // --- SUPABASE CLIENT ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -19,7 +20,7 @@ export default function App() {
     return (points || 0).toLocaleString('pt-BR');
   };
 
-  const [activeTab, setActiveTab] = useState<'placar' | 'enviar' | 'recompensas' | 'admin' | 'mural'>('recompensas');
+  const [activeTab, setActiveTab] = useState<'placar' | 'enviar' | 'recompensas' | 'admin' | 'mural' | 'relatorios'>('recompensas');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -30,6 +31,13 @@ export default function App() {
   const [notifications, setNotifications] = useState<{id: number, msg: string, type: 'success'|'error'}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadOlder, setLoadOlder] = useState(false);
+
+  // Report States
+  const [reportMonth, setReportMonth] = useState(new Date().getMonth());
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
+  const [reportUserId, setReportUserId] = useState<string>('all');
+  const [reportData, setReportData] = useState<any[]>([]);
+  const [isReportLoading, setIsReportLoading] = useState(false);
 
   // Form states
   const [selectedTarefa, setSelectedTarefa] = useState('');
@@ -252,6 +260,40 @@ export default function App() {
       setIsLoading(false);
     }
   };
+
+  const fetchReportData = async () => {
+    setIsReportLoading(true);
+    try {
+      // Create dates for the first and last day of the selected month
+      const startDate = new Date(reportYear, reportMonth, 1).toISOString();
+      const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59).toISOString();
+
+      let query = supabase
+        .from('submissoes')
+        .select('id, usuario_id, status, data_envio, usuarios(nome), tipos_tarefas(pontos)')
+        .gte('data_envio', startDate)
+        .lte('data_envio', endDate);
+
+      if (reportUserId !== 'all') {
+        query = query.eq('usuario_id', reportUserId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setReportData(data || []);
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+      showNotification("Erro ao carregar relatórios", "error");
+    } finally {
+      setIsReportLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'relatorios' && currentUser?.cargo === 'admin') {
+      fetchReportData();
+    }
+  }, [activeTab, reportMonth, reportYear, reportUserId]);
 
   const fetchAllData = async (forceRefresh = true, fetchOlder = loadOlder) => {
     // Cache Check
@@ -1381,7 +1423,10 @@ export default function App() {
           <SidebarNavButton active={activeTab === 'placar'} onClick={() => setActiveTab('placar')} icon={<Trophy className="w-4 h-4" />} text="Ranking" />
           <SidebarNavButton active={activeTab === 'mural'} onClick={() => setActiveTab('mural')} icon={<Star className="w-4 h-4" />} text="Mural" />
           {currentUser?.cargo === 'admin' && (
-            <SidebarNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield className="w-4 h-4" />} text="Admin" />
+            <>
+              <SidebarNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield className="w-4 h-4" />} text="Admin" />
+              <SidebarNavButton active={activeTab === 'relatorios'} onClick={() => setActiveTab('relatorios')} icon={<BarChart3 className="w-4 h-4" />} text="Relatórios" />
+            </>
           )}
         </nav>
 
@@ -2890,6 +2935,184 @@ export default function App() {
             </section>
           </div>
         )}
+
+        {/* RELATORIOS TAB */}
+        {activeTab === 'relatorios' && currentUser?.cargo === 'admin' && (
+          <div className="space-y-8 animate-in fade-in duration-300">
+            <div className="mb-8">
+              <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                <BarChart3 className="w-8 h-8 text-[#00A3FF]" /> Relatórios e Métricas
+              </h1>
+              <p className="text-gray-400 mt-2">Acompanhe o engajamento da equipe e o status das missões.</p>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] flex flex-wrap gap-4 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mês</label>
+                <select 
+                  value={reportMonth} 
+                  onChange={(e) => setReportMonth(Number(e.target.value))}
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00A3FF]/50 transition-colors"
+                >
+                  {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                    <option key={i} value={i}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ano</label>
+                <select 
+                  value={reportYear} 
+                  onChange={(e) => setReportYear(Number(e.target.value))}
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00A3FF]/50 transition-colors"
+                >
+                  {[2024, 2025, 2026, 2027, 2028].map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Usuário</label>
+                <select 
+                  value={reportUserId} 
+                  onChange={(e) => setReportUserId(e.target.value)}
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00A3FF]/50 transition-colors"
+                >
+                  <option value="all">Toda a Equipe</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {isReportLoading ? (
+              <div className="flex justify-center py-20">
+                <div className="w-12 h-12 border-4 border-[#00A3FF]/20 border-t-[#00A3FF] rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <p className="text-sm text-gray-400 font-medium mb-1">Total de Missões</p>
+                    <p className="text-3xl font-black text-white">{reportData.length}</p>
+                  </div>
+                  <div className="bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <p className="text-sm text-gray-400 font-medium mb-1">Aprovadas</p>
+                    <p className="text-3xl font-black text-emerald-400">{reportData.filter(d => d.status === 'aprovado').length}</p>
+                  </div>
+                  <div className="bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <p className="text-sm text-gray-400 font-medium mb-1">Rejeitadas</p>
+                    <p className="text-3xl font-black text-red-400">{reportData.filter(d => d.status === 'rejeitado').length}</p>
+                  </div>
+                  <div className="bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#00A3FF]/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <p className="text-sm text-gray-400 font-medium mb-1">Pontos Distribuídos</p>
+                    <p className="text-3xl font-black text-[#00F0FF]">{formatPoints(reportData.filter(d => d.status === 'aprovado').reduce((acc, curr) => acc + (curr.tipos_tarefas?.pontos || 0), 0))}</p>
+                  </div>
+                </div>
+
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Bar Chart */}
+                  <div className="lg:col-span-2 bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
+                    <h3 className="text-lg font-bold text-white mb-6">Missões por Usuário (Top 10)</h3>
+                    <div className="h-[300px] w-full">
+                      {reportData.length > 0 ? (() => {
+                        const userMissionsMap = reportData.reduce((acc, curr) => {
+                          const userName = curr.usuarios?.nome || 'Desconhecido';
+                          if (!acc[userName]) acc[userName] = 0;
+                          acc[userName]++;
+                          return acc;
+                        }, {} as Record<string, number>);
+                        const barChartData = Object.keys(userMissionsMap).map(name => ({ name, missoes: userMissionsMap[name] })).sort((a, b) => b.missoes - a.missoes).slice(0, 10);
+
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                              <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+                              <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+                              <Tooltip 
+                                cursor={{ fill: '#ffffff05' }}
+                                contentStyle={{ backgroundColor: '#121212', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff' }}
+                              />
+                              <Bar dataKey="missoes" fill="#00A3FF" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        );
+                      })() : (
+                        <div className="h-full flex items-center justify-center text-gray-500">Nenhum dado para exibir.</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Donut Chart */}
+                  <div className="bg-[#0A0A0A]/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
+                    <h3 className="text-lg font-bold text-white mb-6">Status das Missões</h3>
+                    <div className="h-[300px] w-full">
+                      {reportData.length > 0 ? (() => {
+                        const pieChartData = [
+                          { name: 'Aprovadas', value: reportData.filter(d => d.status === 'aprovado').length, color: '#10B981' },
+                          { name: 'Pendentes', value: reportData.filter(d => d.status === 'pendente').length, color: '#00A3FF' },
+                          { name: 'Rejeitadas', value: reportData.filter(d => d.status === 'rejeitado').length, color: '#EF4444' },
+                        ].filter(d => d.value > 0);
+
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <Pie
+                                data={pieChartData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {pieChartData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#121212', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff' }}
+                                itemStyle={{ color: '#fff' }}
+                              />
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        );
+                      })() : (
+                        <div className="h-full flex items-center justify-center text-gray-500">Nenhum dado para exibir.</div>
+                      )}
+                    </div>
+                    {/* Custom Legend */}
+                    {reportData.length > 0 && (
+                      <div className="flex flex-wrap justify-center gap-4 mt-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#10B981]"></div>
+                          <span className="text-xs text-gray-400">Aprovadas</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#00A3FF]"></div>
+                          <span className="text-xs text-gray-400">Pendentes</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#EF4444]"></div>
+                          <span className="text-xs text-gray-400">Rejeitadas</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
           </div>
         </main>
 
@@ -2901,7 +3124,10 @@ export default function App() {
             <MobileNavButton active={activeTab === 'placar'} onClick={() => setActiveTab('placar')} icon={<Trophy />} text="Ranking" />
             <MobileNavButton active={activeTab === 'mural'} onClick={() => setActiveTab('mural')} icon={<Star />} text="Mural" />
             {currentUser?.cargo === 'admin' && (
-              <MobileNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield />} text="Admin" />
+              <>
+                <MobileNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield />} text="Admin" />
+                <MobileNavButton active={activeTab === 'relatorios'} onClick={() => setActiveTab('relatorios')} icon={<BarChart3 />} text="Relatórios" />
+              </>
             )}
           </div>
         </nav>
