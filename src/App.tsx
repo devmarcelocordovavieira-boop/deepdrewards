@@ -297,7 +297,7 @@ export default function App() {
     // Fetch submissions
     let subQuery = supabase
       .from('submissoes')
-      .select('id, usuario_id, tarefa_id, descricao, url_prova, status, data_envio, motivo_rejeicao, usuarios(nome), tipos_tarefas(nome, pontos)')
+      .select('id, usuario_id, tarefa_id, descricao, url_prova, status, data_envio, motivo_rejeicao, usuarios(nome, avatar), tipos_tarefas(nome, pontos)')
       .order('data_envio', { ascending: false });
     if (dateFilter) subQuery = subQuery.gte('data_envio', dateFilter);
     const { data: subData } = await subQuery.limit(limit);
@@ -308,6 +308,7 @@ export default function App() {
         id: s.id,
         usuario_id: s.usuario_id,
         usuario_nome: s.usuarios?.nome || 'Desconhecido',
+        usuario_avatar: s.usuarios?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.usuarios?.nome || 'Desconhecido'}`,
         tarefa_id: s.tarefa_id,
         tarefa_nome: s.tipos_tarefas?.nome || 'Tarefa',
         pontos: s.tipos_tarefas?.pontos || 0,
@@ -2273,7 +2274,8 @@ export default function App() {
                     {submissoes.filter(s => s.status === 'pendente').map(sub => (
                       <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-[#121212]/80 hover:bg-white/5 rounded-2xl transition-all border border-white/5 hover:border-[#00A3FF]/30 hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden">
                         <div className="space-y-2 flex-1 min-w-0 w-full">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
+                            <img src={sub.usuario_avatar} alt={sub.usuario_nome} loading="lazy" className="w-8 h-8 rounded-full bg-[#0A0A0A] border border-white/10 object-cover shrink-0" />
                             <span className="font-bold text-white text-lg truncate select-text selection:bg-[#00A3FF]/30 selection:text-white">{sub.usuario_nome}</span>
                             <span className="px-2.5 py-1 bg-[#00A3FF]/20 text-[#00F0FF] text-xs font-bold rounded-lg border border-[#00A3FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)] whitespace-nowrap">+{sub.pontos} pts</span>
                           </div>
