@@ -1322,18 +1322,17 @@ export default function App() {
       {/* SIDEBAR (DESKTOP) */}
       <aside className="hidden md:flex flex-col w-64 bg-[#050505] border-r border-white/5 z-40 sticky top-0 h-screen overflow-y-auto">
         <div className="p-6 flex items-center gap-3 mb-2">
-          <div className="h-8 flex items-center justify-center">
+          <div className="h-10 flex items-center justify-center">
             <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
             <Cpu className="w-6 h-6 text-white hidden" />
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-white uppercase">
+          <h1 className="text-lg font-black tracking-tight text-white uppercase font-sans">
             DEEP GAME
           </h1>
         </div>
 
         <div className="px-4 mb-8">
-          <div className="flex flex-col gap-4 p-4 bg-[#0A0A0A] rounded-2xl border border-white/5 relative overflow-hidden">
-            <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-10 pointer-events-none ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
+          <div className="flex flex-col gap-3 p-3 bg-transparent relative overflow-hidden">
             <div className="flex items-center gap-3 relative z-10">
               <div className="relative group cursor-pointer flex-shrink-0">
                 <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 object-cover`} />
@@ -1343,31 +1342,11 @@ export default function App() {
                 </label>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white truncate">{currentUser.nome}</p>
-                <div className="flex items-center justify-between gap-1 mt-0.5">
-                  <div className={`flex items-center gap-1 text-xs ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
-                    <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
-                    <span className="truncate">{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
-                  </div>
-                  <button type="button" onClick={() => setShowRankingsModal(true)} className="text-gray-500 hover:text-white transition-colors cursor-pointer shrink-0" title="Ver todos os rankings">
-                    <Info className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between pt-3 border-t border-white/5 relative z-10">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Corujitas</span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Bird className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
                   <span className="text-sm font-medium text-white">{formatPoints(currentUser.pontos)}</span>
                 </div>
-              </div>
-              <div className="w-px h-8 bg-white/5"></div>
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Ranking</span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 mt-0.5">
                   <Trophy className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-sm font-medium text-white">{formatPoints(currentUser.pontos_acumulados)}</span>
                 </div>
@@ -1376,11 +1355,7 @@ export default function App() {
             
             {/* Progress Bar */}
             {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
-              <div className="pt-1 relative z-10">
-                <div className="flex justify-between text-[10px] text-gray-500 mb-1.5">
-                  <span>Para {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName}</span>
-                  <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
-                </div>
+              <div className="relative z-10">
                 <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ease-out`}
