@@ -1320,69 +1320,70 @@ export default function App() {
       <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#00f0ff08_1px,transparent_1px),linear-gradient(to_bottom,#00f0ff08_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
       
       {/* SIDEBAR (DESKTOP) */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#0A0A0A]/80 backdrop-blur-xl border-r border-white/10 z-40 sticky top-0 h-screen overflow-y-auto shadow-[4px_0_24px_rgba(0,163,255,0.05)]">
-        <div className="p-6 flex items-center gap-3 mb-6">
-          <div className="h-12 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
-            <Cpu className="w-6 h-6 text-[#00A3FF] hidden" />
+      <aside className="hidden md:flex flex-col w-64 bg-[#050505] border-r border-white/5 z-40 sticky top-0 h-screen overflow-y-auto">
+        <div className="p-6 flex items-center gap-3 mb-2">
+          <div className="h-8 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+            <Cpu className="w-6 h-6 text-white hidden" />
           </div>
-          <h1 className="text-xl font-black tracking-tight text-white uppercase">
+          <h1 className="text-lg font-bold tracking-tight text-white uppercase">
             DEEP GAME
           </h1>
         </div>
 
         <div className="px-4 mb-8">
-          <div className="flex flex-col gap-3 p-3 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
-            <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-20 pointer-events-none ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-4 p-4 bg-[#0A0A0A] rounded-2xl border border-white/5 relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-16 h-16 blur-2xl opacity-10 pointer-events-none ${getUserTier(currentUser.pontos_acumulados || 0).bg}`}></div>
+            <div className="flex items-center gap-3 relative z-10">
               <div className="relative group cursor-pointer flex-shrink-0">
-                <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
+                <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-black/50 object-cover`} />
                 <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                   <Camera className="w-4 h-4 text-white" />
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </label>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-white truncate">{currentUser.nome}</p>
+                <p className="text-sm font-medium text-white truncate">{currentUser.nome}</p>
                 <div className="flex items-center justify-between gap-1 mt-0.5">
-                  <div className={`flex items-center gap-1 text-xs font-bold ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
+                  <div className={`flex items-center gap-1 text-xs ${getUserTier(currentUser.pontos_acumulados || 0).color}`}>
                     <span>{getUserTier(currentUser.pontos_acumulados || 0).icon}</span>
                     <span className="truncate">{getUserTier(currentUser.pontos_acumulados || 0).name}</span>
                   </div>
-                  <button type="button" onClick={() => setShowRankingsModal(true)} className="p-1.5 -mr-1.5 text-gray-500 hover:text-white transition-colors cursor-pointer shrink-0 relative z-50 pointer-events-auto" title="Ver todos os rankings">
-                    <Info className="w-4 h-4" />
+                  <button type="button" onClick={() => setShowRankingsModal(true)} className="text-gray-500 hover:text-white transition-colors cursor-pointer shrink-0" title="Ver todos os rankings">
+                    <Info className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Corujitas</span>
-                <div className="flex items-center gap-1">
-                  <Bird className="w-3 h-3 text-[#00F0FF] fill-[#00F0FF]" />
-                  <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos)}</span>
+            <div className="flex items-center justify-between pt-3 border-t border-white/5 relative z-10">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Corujitas</span>
+                <div className="flex items-center gap-1.5">
+                  <Bird className="w-3.5 h-3.5 text-[#00F0FF] fill-[#00F0FF]" />
+                  <span className="text-sm font-medium text-white">{formatPoints(currentUser.pontos)}</span>
                 </div>
               </div>
-              <div className="bg-black/20 rounded-lg p-2 border border-white/5 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Ranking</span>
-                <div className="flex items-center gap-1">
-                  <Trophy className="w-3 h-3 text-amber-400" />
-                  <span className="text-sm font-black text-white">{formatPoints(currentUser.pontos_acumulados)}</span>
+              <div className="w-px h-8 bg-white/5"></div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Ranking</span>
+                <div className="flex items-center gap-1.5">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-sm font-medium text-white">{formatPoints(currentUser.pontos_acumulados)}</span>
                 </div>
               </div>
             </div>
             
             {/* Progress Bar */}
             {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName && (
-              <div className="mt-1">
-                <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium">
-                  <span>Progresso para {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName}</span>
+              <div className="pt-1 relative z-10">
+                <div className="flex justify-between text-[10px] text-gray-500 mb-1.5">
+                  <span>Para {getRankProgress(currentUser.pontos_acumulados || 0).nextTierName}</span>
                   <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
                 </div>
-                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 relative">
+                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                   <div 
-                    className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out`}
+                    className={`h-full rounded-full transition-all duration-1000 ease-out`}
                     style={{ 
                       width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
                       backgroundColor: 'currentColor',
@@ -1392,35 +1393,33 @@ export default function App() {
                              getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
                              getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
                     }}
-                  >
-                    <div className="absolute inset-0 bg-white/20"></div>
-                  </div>
+                  />
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2">
-          <SidebarNavButton active={activeTab === 'recompensas'} onClick={() => setActiveTab('recompensas')} icon={<Gift className="w-5 h-5" />} text="Prêmios" />
-          <SidebarNavButton active={activeTab === 'enviar'} onClick={() => setActiveTab('enviar')} icon={<Camera className="w-5 h-5" />} text="Missões" />
-          <SidebarNavButton active={activeTab === 'placar'} onClick={() => setActiveTab('placar')} icon={<Trophy className="w-5 h-5" />} text="Ranking" />
-          <SidebarNavButton active={activeTab === 'mural'} onClick={() => setActiveTab('mural')} icon={<Star className="w-5 h-5" />} text="Mural" />
+        <nav className="flex-1 px-3 space-y-1">
+          <SidebarNavButton active={activeTab === 'recompensas'} onClick={() => setActiveTab('recompensas')} icon={<Gift className="w-4 h-4" />} text="Prêmios" />
+          <SidebarNavButton active={activeTab === 'enviar'} onClick={() => setActiveTab('enviar')} icon={<Camera className="w-4 h-4" />} text="Missões" />
+          <SidebarNavButton active={activeTab === 'placar'} onClick={() => setActiveTab('placar')} icon={<Trophy className="w-4 h-4" />} text="Ranking" />
+          <SidebarNavButton active={activeTab === 'mural'} onClick={() => setActiveTab('mural')} icon={<Star className="w-4 h-4" />} text="Mural" />
           {currentUser?.cargo === 'admin' && (
-            <SidebarNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield className="w-5 h-5" />} text="Admin" />
+            <SidebarNavButton active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={<Shield className="w-4 h-4" />} text="Admin" />
           )}
         </nav>
 
-        <div className="p-4 mt-auto space-y-2">
-          <button onClick={() => setSoundEnabled(!soundEnabled)} className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
-            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+        <div className="p-3 mt-auto space-y-1">
+          <button onClick={() => setSoundEnabled(!soundEnabled)} className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-medium text-sm">
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             {soundEnabled ? 'Som Ativado' : 'Som Desativado'}
           </button>
-          <a href="/" className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
-            <ArrowLeft className="w-5 h-5" /> Voltar para o Hub
+          <a href="/" className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-medium text-sm">
+            <ArrowLeft className="w-4 h-4" /> Voltar para o Hub
           </a>
-          <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-bold text-sm">
-            <LogOut className="w-5 h-5" /> Sair
+          <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-medium text-sm">
+            <LogOut className="w-4 h-4" /> Sair
           </button>
         </div>
       </aside>
@@ -3072,13 +3071,13 @@ function SidebarNavButton({ active, onClick, icon, text }: { active: boolean, on
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold transition-all duration-200 active:scale-95 ${
+      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
         active 
-          ? 'bg-[#00A3FF] text-white shadow-lg shadow-[#00A3FF]/20 translate-x-1' 
-          : 'text-gray-400 hover:text-white hover:bg-white/10 hover:translate-x-1'
+          ? 'bg-[#00A3FF] text-white' 
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
       }`}
     >
-      <div className={`transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+      <div className={`${active ? 'text-white' : 'text-gray-400'}`}>
         {icon}
       </div>
       {text}
