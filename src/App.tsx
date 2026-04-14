@@ -53,6 +53,10 @@ export default function App() {
   const [editProdutoData, setEditProdutoData] = useState({ nome: '', descricao: '', regras: '', preco_pontos: 0, estoque: 0, imagem_url: '' });
   const [draggedProdutoId, setDraggedProdutoId] = useState<string | null>(null);
   const [draggedTarefaId, setDraggedTarefaId] = useState<string | null>(null);
+  
+  // Admin Filters
+  const [adminMissionFilter, setAdminMissionFilter] = useState<string>('all');
+  const [adminMissionUserFilter, setAdminMissionUserFilter] = useState<string>('all');
 
   // Global paste handler for images
   React.useEffect(() => {
@@ -134,10 +138,10 @@ export default function App() {
   };
 
   const getUserTier = (pontos: number) => {
-    if (pontos >= 50000) return { name: 'Diamante', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20', icon: '💎' };
-    if (pontos >= 10000) return { name: 'Ouro', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: '🏆' };
-    if (pontos >= 5000) return { name: 'Prata', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20', icon: '🥈' };
-    if (pontos >= 1000) return { name: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: '🥉' };
+    if (pontos >= 50000) return { name: 'Diamante', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200', icon: '💎' };
+    if (pontos >= 10000) return { name: 'Ouro', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', icon: '🏆' };
+    if (pontos >= 5000) return { name: 'Prata', color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200', icon: '🥈' };
+    if (pontos >= 1000) return { name: 'Bronze', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', icon: '🥉' };
     return { name: 'Iniciante', color: 'text-gray-500', bg: 'bg-gray-100', border: 'border-gray-200', icon: '🌱' };
   };
 
@@ -1166,7 +1170,7 @@ export default function App() {
           <div className="max-w-md w-full mx-auto animate-in fade-in slide-in-from-left-8 duration-700">
             <div className="flex items-center gap-3 mb-12">
               <div className="h-16 flex items-center justify-center">
-                <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_15px_rgba(0,229,255,0.5)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+                <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_15px_rgba(234,29,44,0.5)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
                 <Cpu className="w-8 h-8 text-[#EA1D2C] hidden" />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">
@@ -1382,7 +1386,7 @@ export default function App() {
           <div className="flex flex-col gap-3 p-3 bg-transparent relative overflow-hidden">
             <div className="flex items-center gap-3 relative z-10">
               <div className="relative group cursor-pointer flex-shrink-0">
-                <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-gray-900/50 object-cover`} />
+                <img src={currentUser.avatar} alt="Avatar" className={`w-10 h-10 rounded-full bg-gray-100 object-cover`} />
                 <label className="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                   <Camera className="w-4 h-4 text-gray-900" />
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
@@ -1409,11 +1413,10 @@ export default function App() {
                     style={{ 
                       width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
                       backgroundColor: 'currentColor',
-                      color: getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '') === 'white/60' ? '#9ca3af' : 
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'cyan' ? '#22d3ee' :
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'yellow' ? '#facc15' :
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
+                      color: getUserTier(currentUser.pontos_acumulados || 0).color.includes('cyan') ? '#0891b2' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.includes('yellow') ? '#ca8a04' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.includes('slate') ? '#64748b' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.includes('orange') ? '#ea580c' : '#6b7280'
                     }}
                   />
                 </div>
@@ -1453,14 +1456,14 @@ export default function App() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         {/* MOBILE HEADER */}
-        <header className="md:hidden bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-40 px-4 py-3 flex flex-col gap-3 shadow-[0_4px_24px_rgba(0,163,255,0.05)]">
+        <header className="md:hidden bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-40 px-4 py-3 flex flex-col gap-3 shadow-[0_4px_24px_rgba(234,29,44,0.05)]">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <a href="/" className="p-2 -ml-2 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer" title="Voltar para o Hub">
                 <ArrowLeft className="w-5 h-5" />
               </a>
               <div className="h-10 flex items-center justify-center">
-                <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
+                <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(234,29,44,0.3)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.classList.remove('hidden'); }} />
                 <Cpu className="w-5 h-5 text-[#EA1D2C] hidden" />
               </div>
               <h1 className="text-lg font-black tracking-tight text-gray-900 uppercase">
@@ -1475,7 +1478,7 @@ export default function App() {
                 <Info className="w-5 h-5" />
               </button>
               <div className="relative group cursor-pointer">
-                <img src={currentUser.avatar} alt="Avatar" className={`w-8 h-8 rounded-full bg-gray-900/50 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
+                <img src={currentUser.avatar} alt="Avatar" className={`w-8 h-8 rounded-full bg-gray-100 border-2 ${getUserTier(currentUser.pontos_acumulados || 0).border} object-cover`} />
                 <label className="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                   <Camera className="w-3 h-3 text-gray-900" />
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
@@ -1487,14 +1490,14 @@ export default function App() {
           {/* Progress Bar Mobile */}
           <div className="w-full mt-2">
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="bg-white/20 rounded-lg p-2 border border-gray-200 flex flex-col items-center justify-center">
+              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 flex flex-col items-center justify-center">
                 <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-0.5">Corujitas</span>
                 <div className="flex items-center gap-1">
                   <Bird className="w-3 h-3 text-[#EA1D2C] fill-[#EA1D2C]" />
                   <span className="text-sm font-black text-gray-900">{formatPoints(currentUser.pontos)}</span>
                 </div>
               </div>
-              <div className="bg-white/20 rounded-lg p-2 border border-gray-200 flex flex-col items-center justify-center">
+              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 flex flex-col items-center justify-center">
                 <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-0.5">Ranking</span>
                 <div className="flex items-center gap-1">
                   <Trophy className="w-3 h-3 text-amber-400" />
@@ -1512,17 +1515,16 @@ export default function App() {
                   </div>
                   <span>{getRankProgress(currentUser.pontos_acumulados || 0).text}</span>
                 </div>
-                <div className="h-1.5 w-full bg-gray-900/50 rounded-full overflow-hidden border border-gray-200 relative">
+                <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-200 relative">
                   <div 
                     className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out`}
                     style={{ 
                       width: `${getRankProgress(currentUser.pontos_acumulados || 0).percentage}%`,
                       backgroundColor: 'currentColor',
-                      color: getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '') === 'white/60' ? '#9ca3af' : 
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'cyan' ? '#22d3ee' :
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'yellow' ? '#facc15' :
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'gray' ? '#d1d5db' :
-                             getUserTier(currentUser.pontos_acumulados || 0).color.replace('text-', '').split('-')[0] === 'orange' ? '#fb923c' : '#ffffff'
+                      color: getUserTier(currentUser.pontos_acumulados || 0).color.includes('cyan') ? '#0891b2' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.includes('yellow') ? '#ca8a04' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.includes('slate') ? '#64748b' :
+                             getUserTier(currentUser.pontos_acumulados || 0).color.includes('orange') ? '#ea580c' : '#6b7280'
                     }}
                   >
                     <div className="absolute inset-0 bg-white/20"></div>
@@ -1555,12 +1557,12 @@ export default function App() {
           <div key={penalizacao.id} className="fixed top-20 right-4 z-40 w-[90%] md:w-auto max-w-md animate-in slide-in-from-right-8 fade-in duration-500">
             <div className="flex items-start gap-4 p-5 rounded-2xl shadow-2xl border border-gray-200 bg-white/95 backdrop-blur-xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
-              <div className="p-2 bg-gray-50 rounded-xl text-red-400 shrink-0">
+              <div className="p-2 bg-gray-50 rounded-xl text-red-600 shrink-0">
                 <AlertCircle className="w-6 h-6" />
               </div>
               <div className="flex-1">
                 <h3 className="text-gray-900 font-black text-lg mb-1">Penalidade Aplicada</h3>
-                <p className="text-gray-600 text-sm font-medium mb-2">Você perdeu <span className="text-red-400 font-bold">{penalizacao.pontos} pontos</span>.</p>
+                <p className="text-gray-600 text-sm font-medium mb-2">Você perdeu <span className="text-red-600 font-bold">{penalizacao.pontos} pontos</span>.</p>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
                   <p className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1">Motivo:</p>
                   <p className="text-gray-600 text-sm italic">"{penalizacao.motivo}"</p>
@@ -1632,21 +1634,21 @@ export default function App() {
               {/* Animated Background Elements */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute -bottom-24 -right-10 w-80 h-80 bg-gray-100 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s', animationDuration: '4s' }}></div>
+                <div className="absolute -bottom-24 -right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s', animationDuration: '4s' }}></div>
               </div>
               <div className="absolute -right-10 -top-10 opacity-10 pointer-events-none transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
                 <Gift className="w-64 h-64" />
               </div>
               <div className="relative z-10 space-y-2 text-center md:text-left">
                 <h1 className="text-3xl md:text-4xl font-black tracking-tight">Troque seus pontos</h1>
-                <p className="text-gray-900/90 font-medium text-lg">Os melhores prêmios estão aqui.</p>
+                <p className="text-white/90 font-medium text-lg">Os melhores prêmios estão aqui.</p>
               </div>
-              <div className="relative z-10 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 border border-gray-300">
+              <div className="relative z-10 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 border border-white/30">
                 <div className="bg-white rounded-full p-2">
                   <Star className="w-6 h-6 text-[#EA1D2C] fill-[#EA1D2C]" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-900/80 uppercase tracking-wider">Seu Saldo</p>
+                  <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Seu Saldo</p>
                   <p className="text-2xl font-black">{formatPoints(currentUser?.pontos)}</p>
                 </div>
               </div>
@@ -1660,7 +1662,7 @@ export default function App() {
                 <div className="space-y-12">
                   {/* AVAILABLE PRODUCTS */}
                   {availableProducts.length === 0 && lockedProducts.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 font-medium bg-gray-500 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                    <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-b from-[#FFFFFF]/5 to-transparent pointer-events-none"></div>
                       <div className="w-20 h-20 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
                         <div className="absolute inset-0 bg-[#EA1D2C]/20 rounded-full blur-xl animate-pulse"></div>
@@ -1688,7 +1690,7 @@ export default function App() {
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 referrerPolicy="no-referrer"
                               />
-                              <div className={`absolute top-3 right-3 bg-gray-900/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border ${isPremium ? 'border-amber-400/50' : 'border-[#EA1D2C]/30'}`}>
+                              <div className={`absolute top-3 right-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border ${isPremium ? 'border-amber-400/50' : 'border-[#EA1D2C]/30'}`}>
                                 <Star className={`w-3.5 h-3.5 ${isPremium ? 'text-amber-400 fill-amber-400' : 'text-[#EA1D2C] fill-[#EA1D2C]'}`} />
                                 <span className={`font-bold text-sm ${isPremium ? 'text-amber-400' : 'text-[#EA1D2C]'}`}>{formatPoints(produto.preco_pontos)}</span>
                               </div>
@@ -1743,10 +1745,10 @@ export default function App() {
                                 />
                                 {isOutOfStock && (
                                   <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center">
-                                    <span className="text-white font-black text-lg px-6 py-2 bg-gray-900/50 border border-gray-200 rounded-full shadow-md">Esgotado</span>
+                                    <span className="text-gray-900 font-black text-lg px-6 py-2 bg-gray-100 border border-gray-200 rounded-full shadow-md">Esgotado</span>
                                   </div>
                                 )}
-                                <div className={`absolute top-3 right-3 bg-gray-900/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border ${isPremium && !isOutOfStock ? 'border-amber-500/30' : 'border-gray-200'}`}>
+                                <div className={`absolute top-3 right-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm border ${isPremium && !isOutOfStock ? 'border-amber-500/30' : 'border-gray-200'}`}>
                                   <Star className={`w-3.5 h-3.5 ${isPremium && !isOutOfStock ? 'text-amber-500/50' : 'text-gray-500'}`} />
                                   <span className={`font-bold text-sm ${isPremium && !isOutOfStock ? 'text-amber-500/50' : 'text-gray-500'}`}>{formatPoints(produto.preco_pontos)}</span>
                                 </div>
@@ -1841,7 +1843,7 @@ export default function App() {
                 
                 <div className="space-y-4">
                   {tarefas.filter(t => t.ativo !== false).length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 font-medium bg-gray-500 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                    <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-b from-[#EA1D2C]/5 to-transparent pointer-events-none"></div>
                       <div className="w-20 h-20 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
                         <div className="absolute inset-0 bg-[#EA1D2C]/20 rounded-full blur-xl animate-pulse"></div>
@@ -1885,7 +1887,7 @@ export default function App() {
                 <div className="mt-12">
                   <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-6">Minhas Missões</h2>
                   {submissoes.filter(s => s.usuario_id === currentUser.id).length === 0 ? (
-                    <div className="p-10 text-center text-gray-500 font-medium bg-gray-500 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+                    <div className="p-10 text-center text-gray-500 font-medium bg-gray-50 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
                       <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-2 relative">
                         <div className="absolute inset-0 bg-gray-100 rounded-full blur-xl"></div>
@@ -1921,7 +1923,7 @@ export default function App() {
                               ) : (
                                 <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
                               )}
-                              <div className="absolute inset-0 bg-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
+                              <div className="absolute inset-0 bg-white/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-gray-900 text-xs font-bold backdrop-blur-sm">
                                 Ampliar
                               </div>
                             </div>
@@ -2039,8 +2041,8 @@ export default function App() {
                       {top3[1] && (
                         <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-500 delay-100 flex-1">
                           <div className="relative mb-4">
-                            <img src={top3[1].avatar} alt={top3[1].nome} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#7DD3FC] object-cover bg-white" />
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-[#7DD3FC] text-black w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-4 border-white">2</div>
+                            <img src={top3[1].avatar} alt={top3[1].nome} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#9CA3AF] object-cover bg-white" />
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-[#9CA3AF] text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-4 border-white">2</div>
                           </div>
                           <span className="font-bold text-gray-900 text-lg sm:text-xl truncate max-w-[120px] sm:max-w-[160px] text-center">{top3[1].nome}</span>
                           <div className={`flex items-center gap-1 text-xs font-bold mt-1 ${getUserTier(top3[1].pontos_acumulados || 0).color}`}>
@@ -2048,7 +2050,7 @@ export default function App() {
                             <span>{getUserTier(top3[1].pontos_acumulados || 0).name}</span>
                           </div>
                           <span className="text-base font-bold text-[#EA1D2C] mt-2">{formatPoints(top3[1].pontos_acumulados || top3[1].pontos)} pts</span>
-                          <div className="w-full max-w-[120px] sm:max-w-[160px] h-32 sm:h-48 bg-gradient-to-t from-[#7DD3FC]/20 to-transparent mt-4 rounded-t-2xl border-t-2 border-[#7DD3FC]/30"></div>
+                          <div className="w-full max-w-[120px] sm:max-w-[160px] h-32 sm:h-48 bg-gradient-to-t from-[#9CA3AF]/20 to-transparent mt-4 rounded-t-2xl border-t-2 border-[#9CA3AF]/30"></div>
                         </div>
                       )}
 
@@ -2057,8 +2059,8 @@ export default function App() {
                         <div className="flex flex-col items-center animate-in slide-in-from-bottom-12 duration-500 z-10 flex-1">
                           <Crown className="w-12 h-12 text-[#EA1D2C] fill-[#EA1D2C] drop-shadow-lg mb-3 animate-bounce" />
                           <div className="relative mb-4">
-                            <img src={top3[0].avatar} alt={top3[0].nome} className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-[#EA1D2C] object-cover bg-white shadow-[0_0_40px_rgba(255,255,255,0.3)]" />
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-[#EA1D2C] text-black w-10 h-10 rounded-full flex items-center justify-center font-black text-base border-4 border-white">1</div>
+                            <img src={top3[0].avatar} alt={top3[0].nome} className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-[#EA1D2C] object-cover bg-white shadow-[0_0_40px_rgba(234,29,44,0.3)]" />
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-[#EA1D2C] text-white w-10 h-10 rounded-full flex items-center justify-center font-black text-base border-4 border-white">1</div>
                           </div>
                           <span className="font-black text-gray-900 text-xl sm:text-2xl truncate max-w-[140px] sm:max-w-[180px] text-center">{top3[0].nome}</span>
                           <div className={`flex items-center gap-1 text-xs font-bold mt-1 ${getUserTier(top3[0].pontos_acumulados || 0).color}`}>
@@ -2066,7 +2068,7 @@ export default function App() {
                             <span>{getUserTier(top3[0].pontos_acumulados || 0).name}</span>
                           </div>
                           <span className="text-lg font-black text-[#EA1D2C] mt-2">{formatPoints(top3[0].pontos_acumulados || top3[0].pontos)} pts</span>
-                          <div className="w-full max-w-[140px] sm:max-w-[180px] h-40 sm:h-64 bg-gradient-to-t from-[#FFFFFF]/20 to-transparent mt-4 rounded-t-2xl border-t-2 border-[#EA1D2C]/30"></div>
+                          <div className="w-full max-w-[140px] sm:max-w-[180px] h-40 sm:h-64 bg-gradient-to-t from-[#EA1D2C]/20 to-transparent mt-4 rounded-t-2xl border-t-2 border-[#EA1D2C]/30"></div>
                         </div>
                       )}
 
@@ -2074,8 +2076,8 @@ export default function App() {
                       {top3[2] && (
                         <div className="flex flex-col items-center animate-in slide-in-from-bottom-4 duration-500 delay-200 flex-1">
                           <div className="relative mb-4">
-                            <img src={top3[2].avatar} alt={top3[2].nome} className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-[#0284C7] object-cover bg-white" />
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-[#0284C7] text-gray-900 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-4 border-white">3</div>
+                            <img src={top3[2].avatar} alt={top3[2].nome} className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-[#D97706] object-cover bg-white" />
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-[#D97706] text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-4 border-white">3</div>
                           </div>
                           <span className="font-bold text-gray-900 text-base sm:text-lg truncate max-w-[100px] sm:max-w-[140px] text-center">{top3[2].nome}</span>
                           <div className={`flex items-center gap-1 text-xs font-bold mt-1 ${getUserTier(top3[2].pontos_acumulados || 0).color}`}>
@@ -2083,7 +2085,7 @@ export default function App() {
                             <span>{getUserTier(top3[2].pontos_acumulados || 0).name}</span>
                           </div>
                           <span className="text-sm font-bold text-[#EA1D2C] mt-2">{formatPoints(top3[2].pontos_acumulados || top3[2].pontos)} pts</span>
-                          <div className="w-full max-w-[100px] sm:max-w-[140px] h-24 sm:h-36 bg-gradient-to-t from-[#0284C7]/20 to-transparent mt-4 rounded-t-2xl border-t-2 border-[#0284C7]/30"></div>
+                          <div className="w-full max-w-[100px] sm:max-w-[140px] h-24 sm:h-36 bg-gradient-to-t from-[#D97706]/20 to-transparent mt-4 rounded-t-2xl border-t-2 border-[#D97706]/30"></div>
                         </div>
                       )}
                     </div>
@@ -2129,7 +2131,7 @@ export default function App() {
 
               if (atividades.length === 0) {
                 return (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-500 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-3xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-[#EA1D2C]/5 to-transparent pointer-events-none"></div>
                     <div className="w-20 h-20 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
                       <div className="absolute inset-0 bg-[#EA1D2C]/20 rounded-full blur-xl animate-pulse"></div>
@@ -2139,7 +2141,7 @@ export default function App() {
                     <p className="text-sm text-gray-500 max-w-sm relative z-10">Ninguém completou missões ou resgatou prêmios recentemente. Seja o primeiro a quebrar o gelo!</p>
                     <button 
                       onClick={() => setActiveTab('enviar')}
-                      className="mt-4 px-6 py-3 bg-[#EA1D2C] hover:bg-[#C81824] text-white font-bold rounded-xl transition-colors shadow-md hover:shadow-[0_0_25px_rgba(0,163,255,0.5)] relative z-10"
+                      className="mt-4 px-6 py-3 bg-[#EA1D2C] hover:bg-[#C81824] text-white font-bold rounded-xl transition-colors shadow-md hover:shadow-[0_0_25px_rgba(234,29,44,0.5)] relative z-10"
                     >
                       Fazer uma Missão
                     </button>
@@ -2148,12 +2150,12 @@ export default function App() {
               }
 
               return (
-                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
+                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
                   {atividades.map((atividade) => (
                     <div key={atividade.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       {/* Timeline dot */}
-                      <div className={`flex items-center justify-center w-12 h-12 rounded-full border-4 border-[#0A0A0A] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${
-                        atividade.type === 'missao' ? 'bg-amber-500/20 text-amber-400' : 
+                      <div className={`flex items-center justify-center w-12 h-12 rounded-full border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${
+                        atividade.type === 'missao' ? 'bg-amber-500/20 text-amber-600' : 
                         atividade.type === 'bonificacao' ? 'bg-[#EA1D2C]/20 text-[#EA1D2C]' : 'bg-[#EA1D2C]/20 text-[#EA1D2C]'
                       }`}>
                         {atividade.type === 'missao' ? <Star className="w-5 h-5 fill-current" /> : 
@@ -2173,7 +2175,7 @@ export default function App() {
                         
                         {atividade.type === 'missao' ? (
                           <p className="text-sm text-gray-600 break-words">
-                            Completou uma missão e ganhou <span className="text-emerald-400 font-bold whitespace-nowrap">+{formatPoints(atividade.data.pontos)} pts</span>!
+                            Completou uma missão e ganhou <span className="text-emerald-600 font-bold whitespace-nowrap">+{formatPoints(atividade.data.pontos)} pts</span>!
                           </p>
                         ) : atividade.type === 'bonificacao' ? (
                           <p className="text-sm text-gray-600 break-words">
@@ -2220,7 +2222,7 @@ export default function App() {
               </div>
               <button 
                 onClick={copyInviteLink}
-                className="px-5 py-3 bg-gradient-to-r from-[#EA1D2C] to-[#C81824] text-white rounded-xl font-bold hover:from-[#FFFFFF] hover:to-[#EA1D2C] transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)] hover:shadow-[0_0_25px_rgba(0,240,255,0.6)] flex items-center justify-center gap-2"
+                className="px-5 py-3 bg-gradient-to-r from-[#EA1D2C] to-[#C81824] text-white rounded-xl font-bold hover:from-[#C81824] hover:to-[#A0131D] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                 Copiar Link de Convite
@@ -2230,80 +2232,115 @@ export default function App() {
             {/* FILA DE APROVAÇÃO DE MISSÕES */}
             <section className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden mb-8 relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-32 bg-[#EA1D2C]/10 blur-[50px] pointer-events-none"></div>
-              <div className="p-6 border-b border-gray-200 bg-transparent relative z-10">
+              <div className="p-6 border-b border-gray-200 bg-transparent relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
                   <Camera className="w-5 h-5 text-[#EA1D2C]" /> Fila de Avaliação de Missões
                 </h2>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select 
+                    value={adminMissionFilter}
+                    onChange={(e) => setAdminMissionFilter(e.target.value)}
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
+                  >
+                    <option value="all">Todas as Missões</option>
+                    {tarefas.map(t => (
+                      <option key={t.id} value={t.id}>{t.nome}</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={adminMissionUserFilter}
+                    onChange={(e) => setAdminMissionUserFilter(e.target.value)}
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
+                  >
+                    <option value="all">Todos os Usuários</option>
+                    {users.filter(u => u.cargo !== 'admin').map(u => (
+                      <option key={u.id} value={u.id}>{u.nome}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               
               <div className="p-4 relative z-10">
-                {submissoes.filter(s => s.status === 'pendente').length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-500 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#EA1D2C]/5 to-transparent pointer-events-none"></div>
-                    <div className="w-16 h-16 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
-                      <div className="absolute inset-0 bg-[#EA1D2C]/20 rounded-full blur-xl"></div>
-                      <CheckCircle2 className="w-8 h-8 text-[#EA1D2C] relative z-10" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 relative z-10">Tudo limpo! ✨</h3>
-                    <p className="text-sm text-gray-500 relative z-10">Nenhuma missão pendente de avaliação no momento.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {submissoes.filter(s => s.status === 'pendente').map(sub => (
-                      <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-white/80 hover:bg-gray-50 rounded-2xl transition-all border border-gray-200 hover:border-[#EA1D2C]/30 hover:shadow-md w-full overflow-hidden">
-                        <div className="space-y-2 flex-1 min-w-0 w-full">
-                          <div className="flex items-center gap-3">
-                            <img src={sub.usuario_avatar} alt={sub.usuario_nome} loading="lazy" className="w-8 h-8 rounded-full bg-white border border-gray-200 object-cover shrink-0" />
-                            <span className="font-bold text-gray-900 text-lg truncate select-text selection:bg-[#EA1D2C]/30 selection:text-gray-900">{sub.usuario_nome}</span>
-                            <span className="px-2.5 py-1 bg-[#EA1D2C]/10 text-[#EA1D2C] text-xs font-bold rounded-lg border border-[#EA1D2C]/20 shadow-sm whitespace-nowrap">+{sub.pontos} pts</span>
+                {(() => {
+                  const filteredSubmissoes = submissoes.filter(s => {
+                    if (s.status !== 'pendente') return false;
+                    if (adminMissionFilter !== 'all' && s.tarefa_id !== adminMissionFilter) return false;
+                    if (adminMissionUserFilter !== 'all' && s.usuario_id !== adminMissionUserFilter) return false;
+                    return true;
+                  });
+                  
+                  if (filteredSubmissoes.length === 0) {
+                    return (
+                      <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#EA1D2C]/5 to-transparent pointer-events-none"></div>
+                        <div className="w-16 h-16 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
+                          <div className="absolute inset-0 bg-[#EA1D2C]/20 rounded-full blur-xl"></div>
+                          <CheckCircle2 className="w-8 h-8 text-[#EA1D2C] relative z-10" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 relative z-10">Tudo limpo! ✨</h3>
+                        <p className="text-sm text-gray-500 relative z-10">Nenhuma missão pendente de avaliação no momento.</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-3">
+                      {filteredSubmissoes.map(sub => (
+                        <div key={sub.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-white/80 hover:bg-gray-50 rounded-2xl transition-all border border-gray-200 hover:border-[#EA1D2C]/30 hover:shadow-md w-full overflow-hidden">
+                          <div className="space-y-2 flex-1 min-w-0 w-full">
+                            <div className="flex items-center gap-3">
+                              <img src={sub.usuario_avatar} alt={sub.usuario_nome} loading="lazy" className="w-8 h-8 rounded-full bg-white border border-gray-200 object-cover shrink-0" />
+                              <span className="font-bold text-gray-900 text-lg truncate select-text selection:bg-[#EA1D2C]/30 selection:text-gray-900">{sub.usuario_nome}</span>
+                              <span className="px-2.5 py-1 bg-[#EA1D2C]/10 text-[#EA1D2C] text-xs font-bold rounded-lg border border-[#EA1D2C]/20 shadow-sm whitespace-nowrap">+{sub.pontos} pts</span>
+                            </div>
+                            <div className="text-sm font-bold text-gray-600 truncate select-text selection:bg-[#EA1D2C]/30 selection:text-gray-900">{sub.tarefa_nome}</div>
+                            <div className="relative group/desc">
+                              <p className="text-sm text-gray-500 bg-[#F7F7F7] p-3 rounded-xl border border-gray-200 break-words whitespace-pre-wrap overflow-y-auto max-h-32 w-full select-text selection:bg-[#EA1D2C]/30 selection:text-gray-900">{sub.descricao}</p>
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(sub.descricao);
+                                  showNotification('Texto copiado!', 'success', 'none');
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg opacity-0 group-hover/desc:opacity-100 transition-opacity"
+                                title="Copiar texto"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-sm font-bold text-gray-600 truncate select-text selection:bg-[#EA1D2C]/30 selection:text-gray-900">{sub.tarefa_nome}</div>
-                          <div className="relative group/desc">
-                            <p className="text-sm text-gray-500 bg-[#F7F7F7] p-3 rounded-xl border border-gray-200 break-words whitespace-pre-wrap overflow-y-auto max-h-32 w-full select-text selection:bg-[#EA1D2C]/30 selection:text-gray-900">{sub.descricao}</p>
+                          
+                          <div className="w-full md:w-36 h-36 bg-white rounded-2xl border border-gray-200 relative flex-shrink-0 group overflow-hidden">
+                            {sub.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
+                              <video src={sub.url_prova} className="w-full h-full object-cover" controls />
+                            ) : (
+                              <div className="w-full h-full relative cursor-pointer" onClick={() => setLightboxImage(sub.url_prova)}>
+                                <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-white/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-gray-900 text-xs font-bold backdrop-blur-sm">
+                                  Ampliar
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2 w-full md:w-auto md:flex-col">
                             <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(sub.descricao);
-                                showNotification('Texto copiado!', 'success', 'none');
-                              }}
-                              className="absolute top-2 right-2 p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg opacity-0 group-hover/desc:opacity-100 transition-opacity"
-                              title="Copiar texto"
+                              onClick={() => handleAprovar(sub)}
+                              className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-emerald-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
                             >
-                              <Copy className="w-3.5 h-3.5" />
+                              <CheckCircle2 className="w-4 h-4" /> Aprovar
+                            </button>
+                            <button 
+                              onClick={() => handleRejeitar(sub)}
+                              className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-red-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                            >
+                              <XCircle className="w-4 h-4" /> Recusar
                             </button>
                           </div>
                         </div>
-                        
-                        <div className="w-full md:w-36 h-36 bg-white rounded-2xl border border-gray-200 relative flex-shrink-0 group overflow-hidden">
-                          {sub.url_prova.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) ? (
-                            <video src={sub.url_prova} className="w-full h-full object-cover" controls />
-                          ) : (
-                            <div className="w-full h-full relative cursor-pointer" onClick={() => setLightboxImage(sub.url_prova)}>
-                              <img src={sub.url_prova} alt="Evidência" loading="lazy" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">
-                                Ampliar
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 w-full md:w-auto md:flex-col">
-                          <button 
-                            onClick={() => handleAprovar(sub)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-emerald-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
-                          >
-                            <CheckCircle2 className="w-4 h-4" /> Aprovar
-                          </button>
-                          <button 
-                            onClick={() => handleRejeitar(sub)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-red-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
-                          >
-                            <XCircle className="w-4 h-4" /> Recusar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </section>
 
@@ -2318,7 +2355,7 @@ export default function App() {
               
               <div className="p-4 relative z-10">
                 {resgates.filter(r => r.status === 'pendente').length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-500 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-[#EA1D2C]/5 to-transparent pointer-events-none"></div>
                     <div className="w-16 h-16 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
                       <div className="absolute inset-0 bg-[#EA1D2C]/20 rounded-full blur-xl"></div>
@@ -2342,13 +2379,13 @@ export default function App() {
                         <div className="flex gap-2 w-full md:w-auto md:flex-col">
                           <button 
                             onClick={() => handleAprovarResgate(resgate)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-emerald-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                            className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-emerald-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
                           >
                             <CheckCircle2 className="w-4 h-4" /> Aprovar
                           </button>
                           <button 
                             onClick={() => handleRejeitarResgate(resgate)}
-                            className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-red-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                            className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-red-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
                           >
                             <XCircle className="w-4 h-4" /> Recusar
                           </button>
@@ -2403,7 +2440,7 @@ export default function App() {
                             handleReorderTarefas(draggedTarefaId, tarefa.id);
                           }
                         }}
-                        className={`flex items-center justify-between p-4 bg-white/80 rounded-2xl border border-gray-200 group hover:border-[#EA1D2C]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden ${draggedTarefaId === tarefa.id ? 'opacity-50' : ''}`}
+                        className={`flex items-center justify-between p-4 bg-white/80 rounded-2xl border border-gray-200 group hover:border-[#EA1D2C]/30 transition-all hover:shadow-[0_0_15px_rgba(234,29,44,0.1)] w-full overflow-hidden ${draggedTarefaId === tarefa.id ? 'opacity-50' : ''}`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#EA1D2C] transition-colors shrink-0">
@@ -2435,14 +2472,14 @@ export default function App() {
                               setNewTarefaPreview(tarefa.imagem_url || null);
                               setNewTarefaFile(null);
                             }}
-                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
                             title="Editar"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                           </button>
                           <button 
                             onClick={() => handleDeleteTarefa(tarefa.id)}
-                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
                             title="Excluir"
                           >
                             <XCircle className="w-4 h-4" />
@@ -2522,7 +2559,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="flex-1 py-3 bg-[#EA1D2C] text-white rounded-xl font-bold hover:bg-[#EA1D2C] hover:text-[#0A0A0A] transition-colors text-sm shadow-md">
+                      <button type="submit" className="flex-1 py-3 bg-[#EA1D2C] text-white rounded-xl font-bold hover:bg-[#C81824] hover:text-white transition-colors text-sm shadow-md">
                         {editingTarefa ? 'Salvar' : 'Adicionar'}
                       </button>
                       {editingTarefa && (
@@ -2586,7 +2623,7 @@ export default function App() {
                             handleReorderProdutos(draggedProdutoId, produto.id);
                           }
                         }}
-                        className={`flex items-center justify-between p-4 bg-white/80 rounded-2xl border border-gray-200 group hover:border-[#EA1D2C]/30 transition-all hover:shadow-[0_0_15px_rgba(0,163,255,0.1)] w-full overflow-hidden ${draggedProdutoId === produto.id ? 'opacity-50' : ''}`}
+                        className={`flex items-center justify-between p-4 bg-white/80 rounded-2xl border border-gray-200 group hover:border-[#EA1D2C]/30 transition-all hover:shadow-[0_0_15px_rgba(234,29,44,0.1)] w-full overflow-hidden ${draggedProdutoId === produto.id ? 'opacity-50' : ''}`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-[#EA1D2C] transition-colors shrink-0">
@@ -2620,7 +2657,7 @@ export default function App() {
                           </button>
                           <button 
                             onClick={() => handleDeleteProduto(produto.id)}
-                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
                             title="Excluir"
                           >
                             <XCircle className="w-4 h-4" />
@@ -2729,7 +2766,7 @@ export default function App() {
                       />
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="flex-1 py-3 bg-[#EA1D2C] text-white rounded-xl font-bold hover:bg-[#EA1D2C] hover:text-[#0A0A0A] transition-colors text-sm shadow-md">
+                      <button type="submit" className="flex-1 py-3 bg-[#EA1D2C] text-white rounded-xl font-bold hover:bg-[#C81824] hover:text-white transition-colors text-sm shadow-md">
                         {editingProduto ? 'Salvar' : 'Adicionar'}
                       </button>
                       {editingProduto && (
@@ -2763,7 +2800,7 @@ export default function App() {
               
               <div className="p-4 relative z-10">
                 {resgates.length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-500 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4">
+                  <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4">
                     <Ticket className="w-12 h-12 text-[#EA1D2C]/30" />
                     Nenhum resgate realizado ainda.
                   </div>
@@ -2787,7 +2824,7 @@ export default function App() {
                           ) : (
                             <button 
                               onClick={() => handleMarkUsado(resgate.id)}
-                              className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-emerald-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                              className="flex-1 md:flex-none px-5 py-3 bg-gray-50 text-emerald-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
                             >
                               <CheckCircle2 className="w-4 h-4" /> Marcar como Usado
                             </button>
@@ -2854,14 +2891,14 @@ export default function App() {
                           </button>
                           <button 
                             onClick={() => handlePenalizar(user.id)}
-                            className="px-4 py-2 bg-gray-50 text-orange-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                            className="px-4 py-2 bg-gray-50 text-orange-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
                             title="Remover pontos"
                           >
                             <AlertCircle className="w-4 h-4" /> Penalizar
                           </button>
                           <button 
                             onClick={() => handleRemoverUsuario(user.id)}
-                            className="px-4 py-2 bg-gray-50 text-red-400 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                            className="px-4 py-2 bg-gray-50 text-red-600 hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
                             title="Excluir usuário"
                           >
                             <XCircle className="w-4 h-4" /> Remover
@@ -2975,12 +3012,12 @@ export default function App() {
                   <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
                     <p className="text-sm text-gray-500 font-medium mb-1">Aprovadas</p>
-                    <p className="text-3xl font-black text-emerald-400">{reportData.filter(d => d.status === 'aprovado').length}</p>
+                    <p className="text-3xl font-black text-emerald-600">{reportData.filter(d => d.status === 'aprovado').length}</p>
                   </div>
                   <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
                     <p className="text-sm text-gray-500 font-medium mb-1">Rejeitadas</p>
-                    <p className="text-3xl font-black text-red-400">{reportData.filter(d => d.status === 'rejeitado').length}</p>
+                    <p className="text-3xl font-black text-red-600">{reportData.filter(d => d.status === 'rejeitado').length}</p>
                   </div>
                   <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-[#EA1D2C]/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
@@ -3177,10 +3214,10 @@ export default function App() {
             <div className="p-6 space-y-4 relative z-10">
               {[
                 { name: 'Iniciante', min: 0, max: 999, icon: '🌱', color: 'text-gray-500', bg: 'bg-gray-100', border: 'border-gray-200' },
-                { name: 'Bronze', min: 1000, max: 4999, icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' },
-                { name: 'Prata', min: 5000, max: 9999, icon: '🥈', color: 'text-gray-300', bg: 'bg-gray-300/10', border: 'border-gray-300/20' },
-                { name: 'Ouro', min: 10000, max: 49999, icon: '🏆', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
-                { name: 'Diamante', min: 50000, max: '∞', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }
+                { name: 'Bronze', min: 1000, max: 4999, icon: '🥉', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+                { name: 'Prata', min: 5000, max: 9999, icon: '🥈', color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200' },
+                { name: 'Ouro', min: 10000, max: 49999, icon: '🏆', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+                { name: 'Diamante', min: 50000, max: '∞', icon: '💎', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200' }
               ].map((tier, index) => {
                 const isCurrent = currentUser?.pontos_acumulados >= tier.min && (tier.max === '∞' || currentUser?.pontos_acumulados <= tier.max);
                 return (
@@ -3188,12 +3225,12 @@ export default function App() {
                     key={index} 
                     className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
                       isCurrent 
-                        ? `${tier.bg} ${tier.border} shadow-[0_0_15px_rgba(0,163,255,0.1)]` 
-                        : 'bg-[#121212] border-white/5 opacity-70'
+                        ? `${tier.bg} ${tier.border} shadow-[0_0_15px_rgba(234,29,44,0.1)]` 
+                        : 'bg-gray-50 border-gray-200 opacity-70'
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gray-900/50 border ${tier.border}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gray-100 border ${tier.border}`}>
                         {tier.icon}
                       </div>
                       <div>
@@ -3222,7 +3259,7 @@ export default function App() {
         >
           <button 
             onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 p-3 text-white/70 hover:text-white bg-gray-900/50 hover:bg-gray-900/50 rounded-full transition-all z-10"
+            className="absolute top-4 right-4 p-3 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-full transition-all z-10"
           >
             <XCircle className="w-8 h-8" />
           </button>
@@ -3263,7 +3300,7 @@ function MobileNavButton({ active, onClick, icon, text }: { active: boolean, onC
     <button 
       onClick={onClick}
       className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-90 relative ${
-        active ? 'text-[#EA1D2C]' : 'text-gray-500 hover:text-gray-200'
+        active ? 'text-[#EA1D2C]' : 'text-gray-500 hover:text-gray-900'
       }`}
     >
       <div className={`transition-all duration-300 [&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? '[&>svg]:fill-[#EA1D2C]/20 -translate-y-1' : 'hover:-translate-y-0.5'}`}>
@@ -3271,7 +3308,7 @@ function MobileNavButton({ active, onClick, icon, text }: { active: boolean, onC
       </div>
       <span className={`text-[10px] font-bold transition-all duration-300 ${active ? 'opacity-100 translate-y-0' : 'opacity-70'}`}>{text}</span>
       {active && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#EA1D2C] rounded-full shadow-[0_0_8px_#FFFFFF]" />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#EA1D2C] rounded-full shadow-[0_0_8px_#EA1D2C]" />
       )}
     </button>
   );
