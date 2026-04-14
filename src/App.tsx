@@ -8,7 +8,7 @@ import {
   Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX,
   Copy, Bird, BarChart3, PieChart
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
 
 // --- SUPABASE CLIENT ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -269,15 +269,21 @@ export default function App() {
   const fetchReportData = async () => {
     setIsReportLoading(true);
     try {
-      // Create dates for the first and last day of the selected month
-      const startDate = new Date(reportYear, reportMonth, 1).toISOString();
-      const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59).toISOString();
-
       let query = supabase
         .from('submissoes')
-        .select('id, usuario_id, tarefa_id, status, data_envio, usuarios(nome), tipos_tarefas(pontos)')
-        .gte('data_envio', startDate)
-        .lte('data_envio', endDate);
+        .select('id, usuario_id, tarefa_id, status, data_envio, usuarios(nome), tipos_tarefas(nome, pontos)');
+
+      if (reportYear !== -1) {
+        if (reportMonth !== -1) {
+          const startDate = new Date(reportYear, reportMonth, 1).toISOString();
+          const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59).toISOString();
+          query = query.gte('data_envio', startDate).lte('data_envio', endDate);
+        } else {
+          const startDate = new Date(reportYear, 0, 1).toISOString();
+          const endDate = new Date(reportYear, 11, 31, 23, 59, 59).toISOString();
+          query = query.gte('data_envio', startDate).lte('data_envio', endDate);
+        }
+      }
 
       if (reportUserId !== 'all') {
         query = query.eq('usuario_id', reportUserId);
@@ -2954,6 +2960,7 @@ export default function App() {
                   onChange={(e) => setReportMonth(Number(e.target.value))}
                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
                 >
+                  <option value={-1}>Todos os Meses</option>
                   {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
                     <option key={i} value={i}>{m}</option>
                   ))}
@@ -2966,6 +2973,7 @@ export default function App() {
                   onChange={(e) => setReportYear(Number(e.target.value))}
                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
                 >
+                  <option value={-1}>Todos os Anos</option>
                   {[2024, 2025, 2026, 2027, 2028].map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
@@ -3064,7 +3072,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Donut Chart */}
+                  {/* Donut Chart Status */}
                   <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Status das Missões</h3>
                     <div className="h-[300px] w-full">
@@ -3119,6 +3127,55 @@ export default function App() {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Donut Chart Missions Distribution */}
+                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6">Distribuição de Missões</h3>
+                    <div className="h-[300px] w-full">
+                      {reportData.length > 0 ? (() => {
+                        const missionMap = reportData.reduce((acc, curr) => {
+                          const missionName = curr.tipos_tarefas?.nome || 'Desconhecida';
+                          if (!acc[missionName]) acc[missionName] = 0;
+                          acc[missionName]++;
+                          return acc;
+                        }, {} as Record<string, number>);
+
+                        const missionPieData = Object.keys(missionMap).map(name => ({
+                          name,
+                          value: missionMap[name]
+                        })).sort((a, b) => b.value - a.value).slice(0, 5); // Top 5
+
+                        const COLORS = ['#EA1D2C', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
+
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <Pie
+                                data={missionPieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {missionPieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', color: '#111827' }}
+                                itemStyle={{ color: '#111827' }}
+                              />
+                              <Legend verticalAlign="bottom" height={36}/>
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        );
+                      })() : (
+                        <div className="h-full flex items-center justify-center text-gray-500">Nenhum dado para exibir.</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>
