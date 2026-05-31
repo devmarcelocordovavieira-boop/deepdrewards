@@ -64,3 +64,19 @@ input, textarea {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.02);
 }
+/* ============================================================
+   Cursores custom + micro-ajustes (DeepGame)
+   ============================================================ */
+html, body { cursor: url('/cursor.svg') 4 3, auto; }
+a, button:not(:disabled), [role="button"], label, summary, select, .cursor-pointer {
+  cursor: url('/cursor-pointer.svg') 5 4, pointer;
+}
+input, textarea, [contenteditable="true"] { cursor: text; }
+button:disabled, .cursor-not-allowed { cursor: not-allowed; }
+
+::selection { background: rgba(234,29,44,0.18); color: #111827; }
+:focus-visible { outline: 2px solid #EA1D2C; outline-offset: 2px; border-radius: 6px; }
+img { -webkit-user-drag: none; }
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
