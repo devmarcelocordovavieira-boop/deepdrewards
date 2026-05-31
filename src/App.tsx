@@ -13,7 +13,41 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 // --- SUPABASE CLIENT ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Sessão compartilhada entre os subdomínios deepnight (SSO).
+// Grava o token num cookie em .deepnight.com.br, então o login feito no
+// lobby ou no DeepGame JA já vale aqui (e vice-versa).
+const isLocalHost = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const cookieStorage = {
+  getItem: (key: string) => {
+    if (typeof document === 'undefined') return null;
+    const escaped = key.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1');
+    const m = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof document === 'undefined') return;
+    const domainStr = isLocalHost ? '' : 'domain=.deepnight.com.br; ';
+    const secureStr = isLocalHost ? '' : 'Secure; ';
+    document.cookie = `${key}=${encodeURIComponent(value)}; path=/; ${domainStr}${secureStr}max-age=31536000; SameSite=Lax`;
+  },
+  removeItem: (key: string) => {
+    if (typeof document === 'undefined') return;
+    const domainStr = isLocalHost ? '' : 'domain=.deepnight.com.br; ';
+    document.cookie = `${key}=; path=/; ${domainStr}expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  },
+};
+
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storage: cookieStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 export default function App() {
   const formatPoints = (points: number) => {
@@ -1452,7 +1486,7 @@ export default function App() {
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             {soundEnabled ? 'Som Ativado' : 'Som Desativado'}
           </button>
-          <a href="/" className="flex items-center gap-3 w-full px-4 py-3 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors font-medium text-sm">
+          <a href="https://deepnight.com.br/" className="flex items-center gap-3 w-full px-4 py-3 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors font-medium text-sm">
             <ArrowLeft className="w-4 h-4" /> Voltar para o Hub
           </a>
           <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors font-medium text-sm">
@@ -1468,7 +1502,7 @@ export default function App() {
         <header className="md:hidden bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-40 px-4 py-3 flex flex-col gap-3 shadow-[0_4px_24px_rgba(234,29,44,0.05)]">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <a href="/" className="p-2 -ml-2 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer" title="Voltar para o Hub">
+              <a href="https://deepnight.com.br/" className="p-2 -ml-2 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer" title="Voltar para o Hub">
                 <ArrowLeft className="w-5 h-5" />
               </a>
               <div className="h-10 flex items-center justify-center">
