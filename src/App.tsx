@@ -71,6 +71,7 @@ export default function App() {
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
   const [reportUserId, setReportUserId] = useState<string>('all');
   const [reportTarefaId, setReportTarefaId] = useState<string>('all');
+  const [reportDays, setReportDays] = useState(0); // 0 = usa mês/ano; >0 = últimos N dias
   const [reportData, setReportData] = useState<any[]>([]);
   const [isReportLoading, setIsReportLoading] = useState(false);
 
@@ -307,7 +308,11 @@ export default function App() {
         .from('submissoes')
         .select('id, usuario_id, tarefa_id, status, data_envio, usuarios(nome), tipos_tarefas(nome, pontos)');
 
-      if (reportYear !== -1) {
+      if (reportDays > 0) {
+        // Período rápido: últimos N dias (sobrepõe mês/ano)
+        const startDate = new Date(Date.now() - reportDays * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('data_envio', startDate);
+      } else if (reportYear !== -1) {
         if (reportMonth !== -1) {
           const startDate = new Date(reportYear, reportMonth, 1).toISOString();
           const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59).toISOString();
@@ -342,7 +347,7 @@ export default function App() {
     if (activeTab === 'relatorios' && currentUser?.cargo === 'admin') {
       fetchReportData();
     }
-  }, [activeTab, reportMonth, reportYear, reportUserId, reportTarefaId]);
+  }, [activeTab, reportMonth, reportYear, reportUserId, reportTarefaId, reportDays]);
 
   const fetchAllData = async (forceRefresh = true, fetchOlder = loadOlder) => {
     // Cache Check
@@ -2985,9 +2990,23 @@ export default function App() {
               <p className="text-gray-500 mt-2">Acompanhe o engajamento da equipe e o status das missões.</p>
             </div>
 
+            {/* Período rápido */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">Período:</span>
+              {[{ d: 7, l: 'Últimos 7 dias' }, { d: 30, l: '30 dias' }, { d: 90, l: '90 dias' }, { d: 0, l: 'Por mês/ano' }].map(opt => (
+                <button
+                  key={opt.d}
+                  onClick={() => setReportDays(opt.d)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${reportDays === opt.d ? 'bg-[#EA1D2C] text-white shadow-md shadow-[#EA1D2C]/20' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                >
+                  {opt.l}
+                </button>
+              ))}
+            </div>
+
             {/* Filters */}
             <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm flex flex-wrap gap-4 items-end">
-              <div className="flex-1 min-w-[200px]">
+              <div className={`flex-1 min-w-[200px] ${reportDays > 0 ? 'opacity-40 pointer-events-none' : ''}`}>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Mês</label>
                 <select 
                   value={reportMonth} 
@@ -3000,7 +3019,7 @@ export default function App() {
                   ))}
                 </select>
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div className={`flex-1 min-w-[150px] ${reportDays > 0 ? 'opacity-40 pointer-events-none' : ''}`}>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Ano</label>
                 <select 
                   value={reportYear} 
@@ -3212,6 +3231,97 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* ═══ INSIGHTS & CAMPANHAS ═══ */}
+                {(() => {
+                  const aprovadas = reportData.filter((d: any) => d.status === 'aprovado').length;
+                  const rejeitadas = reportData.filter((d: any) => d.status === 'rejeitado').length;
+                  const pendentes = reportData.filter((d: any) => d.status === 'pendente').length;
+                  const taxaAprov = (aprovadas + rejeitadas) > 0 ? Math.round((aprovadas / (aprovadas + rejeitadas)) * 100) : 0;
+
+                  const membros = users.filter((u: any) => u.cargo !== 'admin');
+                  const ativosIds = new Set(reportData.map((d: any) => d.usuario_id));
+                  const inativos = membros.filter((u: any) => !ativosIds.has(u.id));
+                  const ativosCount = membros.length - inativos.length;
+
+                  const tarefasComSub = new Set(reportData.map((d: any) => d.tarefa_id));
+                  const tarefasSemAdesao = tarefas.filter((t: any) => t.ativo && !tarefasComSub.has(t.id));
+
+                  const sugestoes: { icon: string; tone: string; text: string }[] = [];
+                  if (inativos.length > 0)
+                    sugestoes.push({ icon: '🎯', tone: 'amber', text: `${inativos.length} membro(s) sem nenhuma atividade no período. Lance uma campanha de reativação — uma missão-relâmpago com bônus costuma trazê-los de volta.` });
+                  if ((aprovadas + rejeitadas) >= 5 && taxaAprov < 70)
+                    sugestoes.push({ icon: '⚠️', tone: 'red', text: `Taxa de aprovação em ${taxaAprov}%. Muitas reprovações — revise as instruções das missões ou compartilhe exemplos de entregas aprovadas.` });
+                  if (tarefasSemAdesao.length > 0)
+                    sugestoes.push({ icon: '📌', tone: 'blue', text: `${tarefasSemAdesao.length} missão(ões) sem nenhuma adesão. Destaque-as no Mural ou aumente a recompensa temporariamente.` });
+                  if (pendentes >= 8)
+                    sugestoes.push({ icon: '⏳', tone: 'amber', text: `${pendentes} submissões aguardando avaliação. Avalie logo — demora desmotiva o time.` });
+                  if (sugestoes.length === 0)
+                    sugestoes.push({ icon: '✅', tone: 'emerald', text: 'Time saudável neste período: boa adesão, boa taxa de aprovação e fila de avaliação em dia. Que tal um desafio extra para elevar a régua?' });
+
+                  const toneCls = (t: string) =>
+                    t === 'red' ? 'border-red-200 bg-red-50' : t === 'amber' ? 'border-amber-200 bg-amber-50'
+                    : t === 'blue' ? 'border-sky-200 bg-sky-50' : 'border-emerald-200 bg-emerald-50';
+
+                  return (
+                    <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">💡 Insights &amp; Campanhas</h3>
+                      <p className="text-sm text-gray-500 mb-6">Leitura automática dos dados para embasar suas ações.</p>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="rounded-2xl border border-gray-200 p-4">
+                          <p className="text-xs text-gray-500 font-medium mb-1">Taxa de aprovação</p>
+                          <p className={`text-2xl font-black ${taxaAprov >= 70 ? 'text-emerald-600' : 'text-[#EA1D2C]'}`}>{taxaAprov}%</p>
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 p-4">
+                          <p className="text-xs text-gray-500 font-medium mb-1">Membros ativos</p>
+                          <p className="text-2xl font-black text-gray-900">{ativosCount}<span className="text-gray-300">/{membros.length}</span></p>
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 p-4">
+                          <p className="text-xs text-gray-500 font-medium mb-1">Pendentes</p>
+                          <p className="text-2xl font-black text-amber-500">{pendentes}</p>
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 p-4">
+                          <p className="text-xs text-gray-500 font-medium mb-1">Missões sem adesão</p>
+                          <p className="text-2xl font-black text-gray-900">{tarefasSemAdesao.length}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3 mb-6">
+                        {sugestoes.map((s, i) => (
+                          <div key={i} className={`flex items-start gap-3 p-4 rounded-2xl border ${toneCls(s.tone)}`}>
+                            <span className="text-xl shrink-0">{s.icon}</span>
+                            <p className="text-sm text-gray-700 font-medium leading-relaxed">{s.text}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Membros inativos no período</p>
+                          {inativos.length === 0 ? <p className="text-sm text-emerald-600 font-medium">Todos participaram 🎉</p> : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {inativos.slice(0, 20).map((u: any) => (
+                                <span key={u.id} className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2.5 py-1">{u.nome}</span>
+                              ))}
+                              {inativos.length > 20 && <span className="text-xs text-gray-400 font-medium self-center">+{inativos.length - 20}</span>}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Missões sem adesão</p>
+                          {tarefasSemAdesao.length === 0 ? <p className="text-sm text-emerald-600 font-medium">Todas tiveram envios 🎉</p> : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {tarefasSemAdesao.slice(0, 20).map((t: any) => (
+                                <span key={t.id} className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2.5 py-1">{t.nome}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </div>
