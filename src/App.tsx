@@ -420,7 +420,7 @@ export default function App() {
     // Fetch resgates
     let resgatesQuery = supabase
       .from('resgates')
-      .select('id, usuario_id, produto_id, data_resgate, usado, status, usuarios(nome), produtos(nome, preco_pontos)')
+      .select('id, usuario_id, produto_id, data_resgate, usado, usuarios(nome), produtos(nome, preco_pontos)')
       .order('data_resgate', { ascending: false });
     if (dateFilter) resgatesQuery = resgatesQuery.gte('data_resgate', dateFilter);
     const { data: resgatesData } = await resgatesQuery.limit(limit);
@@ -434,8 +434,7 @@ export default function App() {
         produto_nome: r.produtos?.nome || 'Produto',
         preco_pontos: r.produtos?.preco_pontos || 0,
         data_resgate: r.data_resgate,
-        usado: r.usado,
-        status: r.status
+        usado: r.usado
       }));
       setResgates(mappedResgates);
     }
@@ -737,7 +736,7 @@ export default function App() {
 
   const handleAprovarResgate = async (resgate: any) => {
     try {
-      const { error } = await supabase.from('resgates').update({ status: 'aprovado' }).eq('id', resgate.id);
+      const { error } = await supabase.from('resgates').update({ usado: true }).eq('id', resgate.id);
       if (error) throw error;
       showNotification(`Resgate de ${resgate.produto_nome} aprovado!`, 'success');
       fetchAllData();
@@ -1222,7 +1221,7 @@ export default function App() {
                 <Cpu className="w-8 h-8 text-[#EA1D2C] hidden" />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">
-                DEEP GAME
+                DEEP GAME HEALTH
               </h1>
             </div>
 
@@ -1426,7 +1425,7 @@ export default function App() {
             <Cpu className="w-6 h-6 text-gray-900 hidden" />
           </div>
           <h1 className="text-lg font-black tracking-tight text-gray-900 uppercase font-sans">
-            DEEP GAME
+            DEEP GAME HEALTH
           </h1>
         </div>
 
@@ -1515,7 +1514,7 @@ export default function App() {
                 <Cpu className="w-5 h-5 text-[#EA1D2C] hidden" />
               </div>
               <h1 className="text-lg font-black tracking-tight text-gray-900 uppercase">
-                DEEP GAME
+                DEEP GAME HEALTH
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -2402,7 +2401,7 @@ export default function App() {
               </div>
               
               <div className="p-4 relative z-10">
-                {resgates.filter(r => r.status === 'pendente').length === 0 ? (
+                {resgates.filter(r => !r.usado).length === 0 ? (
                   <div className="p-12 text-center text-gray-500 font-medium bg-gray-50 rounded-2xl border border-gray-200 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-[#EA1D2C]/5 to-transparent pointer-events-none"></div>
                     <div className="w-16 h-16 bg-[#EA1D2C]/10 rounded-full flex items-center justify-center mb-2 relative">
@@ -2414,7 +2413,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {resgates.filter(r => r.status === 'pendente').map(resgate => (
+                    {resgates.filter(r => !r.usado).map(resgate => (
                       <div key={resgate.id} className="p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center bg-white/80 hover:bg-gray-50 rounded-2xl transition-all border border-gray-200 hover:border-[#EA1D2C]/30 hover:shadow-md w-full overflow-hidden">
                         <div className="space-y-2 flex-1 min-w-0 w-full">
                           <div className="flex items-center gap-2">
