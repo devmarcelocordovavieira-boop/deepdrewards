@@ -17,25 +17,35 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
 // Sessão compartilhada entre os subdomínios deepnight (SSO).
 // Grava o token num cookie em .deepnight.com.br, então o login feito no
 // lobby ou no DeepGame JA já vale aqui (e vice-versa).
-const isLocalHost = typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+// O atributo Domain só entra quando estamos REALMENTE em deepnight.com.br (ou
+// subdomínio). Em outros hosts (previews *.pages.dev, localhost, domínios de
+// teste) o navegador rejeitaria um cookie com Domain que não bate com a origem,
+// deixando a sessão sem persistir e a tela travada. Aí gravamos host-only.
+const cookieHost = typeof window !== 'undefined' ? window.location.hostname : '';
+const onDeepnight = cookieHost === 'deepnight.com.br' || cookieHost.endsWith('.deepnight.com.br');
+const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+const domainStr = onDeepnight ? 'domain=.deepnight.com.br; ' : '';
+const secureStr = isSecure ? 'Secure; ' : '';
 
 const cookieStorage = {
   getItem: (key: string) => {
     if (typeof document === 'undefined') return null;
     const escaped = key.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1');
     const m = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
-    return m ? decodeURIComponent(m[1]) : null;
+    if (!m) return null;
+    try {
+      return decodeURIComponent(m[1]);
+    } catch {
+      // Cookie corrompido/truncado — não deixa um URIError travar o boot do auth.
+      return null;
+    }
   },
   setItem: (key: string, value: string) => {
     if (typeof document === 'undefined') return;
-    const domainStr = isLocalHost ? '' : 'domain=.deepnight.com.br; ';
-    const secureStr = isLocalHost ? '' : 'Secure; ';
     document.cookie = `${key}=${encodeURIComponent(value)}; path=/; ${domainStr}${secureStr}max-age=31536000; SameSite=Lax`;
   },
   removeItem: (key: string) => {
     if (typeof document === 'undefined') return;
-    const domainStr = isLocalHost ? '' : 'domain=.deepnight.com.br; ';
     document.cookie = `${key}=; path=/; ${domainStr}expires=Thu, 01 Jan 1970 00:00:00 GMT`;
   },
 };
@@ -219,16 +229,23 @@ export default function App() {
     }
 
     checkUser();
-    
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setAuthMode('update_password');
+        return;
       }
-      if (session?.user) {
-        fetchUserData(session.user.id);
-      } else {
+      if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
         setIsLoading(false);
+        return;
+      }
+      // Only act on explicit logins and token refreshes.
+      // INITIAL_SESSION is handled by checkUser() above to avoid double-call.
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          fetchUserData(session.user.id);
+        }
       }
     });
 
@@ -272,29 +289,56 @@ export default function App() {
   }, [currentUser?.id]);
 
   const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await fetchUserData(session.user.id);
-    } else {
-      setIsLoading(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchUserData(session.user.id); // tem seu próprio finally que limpa o loading
+        return;
+      }
+    } catch {
+      // getSession pendurado/erro de rede não pode travar a tela no skeleton.
+      setCurrentUser(null);
     }
+    setIsLoading(false);
   };
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Optimization: Select only necessary fields
       const { data, error } = await supabase.from('usuarios').select('id, nome, email, avatar, pontos, pontos_acumulados, cargo, oculto_ranking').eq('id', userId).single();
+
       if (error) {
-        // If user is not found in the database (e.g., deleted), sign them out
-        await supabase.auth.signOut();
-        throw error;
+        if (error.code === 'PGRST116') {
+          // No profile row — auto-create it from the auth session so the user can log in.
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser?.email) {
+            const nomeAuto = authUser.email.split('@')[0];
+            const { data: newRow, error: insertErr } = await supabase
+              .from('usuarios')
+              .insert({ id: userId, nome: nomeAuto, email: authUser.email, pontos: 0, pontos_acumulados: 0 })
+              .select('id, nome, email, avatar, pontos, pontos_acumulados, cargo, oculto_ranking')
+              .single();
+            if (!insertErr && newRow) {
+              setCurrentUser({ ...newRow, avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeAuto}` });
+              fetchAllData(false);
+              return;
+            }
+          }
+          // Could not create profile — user was removed or invite-only
+          await supabase.auth.signOut();
+          showNotification('Acesso não liberado. Fale com o administrador.', 'error');
+        }
+        setCurrentUser(null);
+        return;
       }
+
+      if (!data) { setCurrentUser(null); return; }
+
       setCurrentUser({
         ...data,
         avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.nome}`
       });
       fetchAllData(false);
-    } catch (error) {
+    } catch (err) {
       setCurrentUser(null);
     } finally {
       setIsLoading(false);
@@ -532,21 +576,7 @@ export default function App() {
           password: authPassword,
         });
         if (error) throw error;
-        
-        // Check if user exists in our database
-        if (authData.user) {
-          const { data: userData, error: userError } = await supabase
-            .from('usuarios')
-            .select('id')
-            .eq('id', authData.user.id)
-            .single();
-            
-          if (userError || !userData) {
-            await supabase.auth.signOut();
-            throw new Error('Esta conta foi removida pelo administrador.');
-          }
-        }
-        
+
         showNotification('Login efetuado!', 'success');
       }
     } catch (error: any) {

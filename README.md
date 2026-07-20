@@ -1,6 +1,6 @@
-# DEEP GAME - Plataforma de Gamificação
+# DEEP GAME HEALTH - Plataforma de Gamificação
 
-O **DEEP GAME** é uma plataforma completa de gamificação projetada para engajar equipes através de missões, recompensas e um sistema de ranking competitivo. Desenvolvido como uma Single Page Application (SPA) moderna, rápida e responsiva.
+O **DEEP GAME HEALTH** é uma plataforma completa de gamificação projetada para engajar equipes através de missões, recompensas e um sistema de ranking competitivo. Desenvolvido como uma Single Page Application (SPA) moderna, rápida e responsiva.
 
 ## 🚀 Tecnologias Utilizadas
 

@@ -1,7 +1,7 @@
 {
-  "name": "DEEP GAME",
-  "short_name": "DEEP GAME",
-  "description": "Plataforma de missões e recompensas DEEP GAME",
+  "name": "DEEP GAME HEALTH",
+  "short_name": "DEEP GAME HEALTH",
+  "description": "Plataforma de missões e recompensas DEEP GAME HEALTH",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
