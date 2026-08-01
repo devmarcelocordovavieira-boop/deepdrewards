@@ -6,9 +6,10 @@ import {
   Trophy, Gift, Camera, Shield, LogIn, LogOut, 
   Star, ChevronRight, CheckCircle2, XCircle, AlertCircle,
   Cpu, Crown, Medal, Ticket, ArrowRight, Heart, ArrowLeft, GripVertical, Lock, Info, Mail, Eye, EyeOff, Target, Volume2, VolumeX,
-  Copy, Bird, BarChart3, PieChart
+  Copy, Bird, BarChart3, PieChart,
+  TrendingUp, TrendingDown, Download, Activity, Award, Calendar, Minus
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 
 // --- SUPABASE CLIENT ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -59,6 +60,124 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
+// ── Relatórios: agrega as submissões em métricas ricas (função pura) ──────────
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+function computeReportStats(data: any[], prevData: any[], users: any[], tarefas: any[]) {
+  const d = Array.isArray(data) ? data : [];
+  const prev = Array.isArray(prevData) ? prevData : [];
+  const isAprov = (x: any) => x.status === 'aprovado';
+  const isRej = (x: any) => x.status === 'rejeitado';
+  const isPend = (x: any) => x.status === 'pendente';
+  const pts = (x: any) => x.tipos_tarefas?.pontos || 0;
+
+  const total = d.length;
+  const aprovadas = d.filter(isAprov).length;
+  const rejeitadas = d.filter(isRej).length;
+  const pendentes = d.filter(isPend).length;
+  const pontos = d.filter(isAprov).reduce((a, c) => a + pts(c), 0);
+  const avaliadas = aprovadas + rejeitadas;
+  const taxaAprov = avaliadas > 0 ? Math.round((aprovadas / avaliadas) * 100) : 0;
+  const avgPts = aprovadas > 0 ? Math.round(pontos / aprovadas) : 0;
+
+  const membrosArr = (users || []).filter((u: any) => u.cargo !== 'admin');
+  const ativosIds = new Set(d.map((x: any) => x.usuario_id));
+  const inativos = membrosArr.filter((u: any) => !ativosIds.has(u.id));
+  const ativosCount = membrosArr.length - inativos.length;
+  const engajamento = membrosArr.length > 0 ? Math.round((ativosCount / membrosArr.length) * 100) : 0;
+
+  // Período anterior (para deltas)
+  const pAprov = prev.filter(isAprov).length;
+  const pRej = prev.filter(isRej).length;
+  const pAval = pAprov + pRej;
+  const pPontos = prev.filter(isAprov).reduce((a, c) => a + pts(c), 0);
+  const pTaxa = pAval > 0 ? Math.round((pAprov / pAval) * 100) : 0;
+  const pAtivos = new Set(prev.map((x: any) => x.usuario_id)).size;
+  const pctDelta = (cur: number, old: number) => old > 0 ? Math.round(((cur - old) / old) * 100) : (cur > 0 ? 100 : 0);
+  const deltas = {
+    hasPrev: prev.length > 0,
+    total: pctDelta(total, prev.length),
+    pontos: pctDelta(pontos, pPontos),
+    taxa: taxaAprov - pTaxa,
+    ativos: pctDelta(ativosCount, pAtivos),
+  };
+
+  // Por usuário
+  const byUserMap: Record<string, any> = {};
+  d.forEach((x: any) => {
+    const id = x.usuario_id;
+    if (!byUserMap[id]) byUserMap[id] = { id, nome: x.usuarios?.nome || 'Desconhecido', avatar: x.usuarios?.avatar || null, total: 0, aprov: 0, rej: 0, pend: 0, pontos: 0 };
+    const u = byUserMap[id];
+    u.total++;
+    if (isAprov(x)) { u.aprov++; u.pontos += pts(x); }
+    else if (isRej(x)) u.rej++;
+    else if (isPend(x)) u.pend++;
+  });
+  const byUser = Object.values(byUserMap).map((u: any) => ({ ...u, taxa: (u.aprov + u.rej) > 0 ? Math.round((u.aprov / (u.aprov + u.rej)) * 100) : 0 }));
+
+  // Por missão
+  const byMissionMap: Record<string, any> = {};
+  d.forEach((x: any) => {
+    const nome = x.tipos_tarefas?.nome || 'Desconhecida';
+    if (!byMissionMap[nome]) byMissionMap[nome] = { nome, total: 0, aprov: 0, rej: 0, pend: 0, pontos: 0 };
+    const m = byMissionMap[nome];
+    m.total++;
+    if (isAprov(x)) { m.aprov++; m.pontos += pts(x); }
+    else if (isRej(x)) m.rej++;
+    else if (isPend(x)) m.pend++;
+  });
+  const byMission = Object.values(byMissionMap).map((m: any) => ({ ...m, taxa: (m.aprov + m.rej) > 0 ? Math.round((m.aprov / (m.aprov + m.rej)) * 100) : 0 }))
+    .sort((a: any, b: any) => b.total - a.total);
+
+  // Série temporal por dia
+  const dayMap: Record<string, any> = {};
+  d.forEach((x: any) => {
+    if (!x.data_envio) return;
+    const day = String(x.data_envio).slice(0, 10);
+    if (!dayMap[day]) dayMap[day] = { date: day, envios: 0, aprovadas: 0, pontos: 0 };
+    dayMap[day].envios++;
+    if (isAprov(x)) { dayMap[day].aprovadas++; dayMap[day].pontos += pts(x); }
+  });
+  const timeSeries = Object.values(dayMap)
+    .sort((a: any, b: any) => a.date.localeCompare(b.date))
+    .map((r: any) => ({ ...r, label: `${r.date.slice(8, 10)}/${r.date.slice(5, 7)}` }));
+
+  // Por dia da semana
+  const wd = [0, 0, 0, 0, 0, 0, 0];
+  d.forEach((x: any) => { if (x.data_envio) wd[new Date(x.data_envio).getDay()]++; });
+  const byWeekday = WEEKDAYS.map((name, i) => ({ name, envios: wd[i] }));
+
+  // Motivos de rejeição
+  const rejMap: Record<string, number> = {};
+  d.filter(isRej).forEach((x: any) => {
+    const r = (x.motivo_rejeicao || 'Sem motivo especificado').trim() || 'Sem motivo especificado';
+    rejMap[r] = (rejMap[r] || 0) + 1;
+  });
+  const rejectionReasons = Object.entries(rejMap).map(([motivo, count]) => ({ motivo, count })).sort((a, b) => b.count - a.count);
+
+  // Missões sem adesão
+  const tarefasComSub = new Set(d.map((x: any) => x.tarefa_id));
+  const tarefasSemAdesao = (tarefas || []).filter((t: any) => t.ativo && !tarefasComSub.has(t.id));
+
+  return {
+    total, aprovadas, rejeitadas, pendentes, pontos, avaliadas, taxaAprov, avgPts,
+    membros: membrosArr.length, ativosCount, inativos, engajamento,
+    deltas, byUser, byMission, timeSeries, byWeekday, rejectionReasons, tarefasSemAdesao,
+  };
+}
+
+// Badge de variação vs. período anterior
+function DeltaBadge({ value, unit = '%', positiveIsGood = true }: { value: number; unit?: string; positiveIsGood?: boolean }) {
+  if (!value) return <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-gray-400"><Minus className="w-3 h-3" />{unit === 'pp' ? ' 0pp' : ' 0%'}</span>;
+  const up = value > 0;
+  const good = up === positiveIsGood;
+  const Icon = up ? TrendingUp : TrendingDown;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${good ? 'text-emerald-600' : 'text-red-500'}`}>
+      <Icon className="w-3 h-3" /> {up ? '+' : ''}{value}{unit === 'pp' ? 'pp' : '%'}
+    </span>
+  );
+}
+
 export default function App() {
   const formatPoints = (points: number) => {
     return (points || 0).toLocaleString('pt-BR');
@@ -84,6 +203,12 @@ export default function App() {
   const [reportDays, setReportDays] = useState(0); // 0 = usa mês/ano; >0 = últimos N dias
   const [reportData, setReportData] = useState<any[]>([]);
   const [isReportLoading, setIsReportLoading] = useState(false);
+  const [reportStatus, setReportStatus] = useState<'all' | 'aprovado' | 'pendente' | 'rejeitado'>('all');
+  const [useCustomRange, setUseCustomRange] = useState(false);
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [prevReportData, setPrevReportData] = useState<any[]>([]);
+  const [userSortBy, setUserSortBy] = useState<'pontos' | 'total' | 'taxa' | 'aprov'>('pontos');
 
   // Form states
   const [selectedTarefa, setSelectedTarefa] = useState('');
@@ -351,37 +476,60 @@ export default function App() {
   const fetchReportData = async () => {
     setIsReportLoading(true);
     try {
-      let query = supabase
-        .from('submissoes')
-        .select('id, usuario_id, tarefa_id, status, data_envio, usuarios(nome), tipos_tarefas(nome, pontos)');
-
-      if (reportDays > 0) {
-        // Período rápido: últimos N dias (sobrepõe mês/ano)
-        const startDate = new Date(Date.now() - reportDays * 24 * 60 * 60 * 1000).toISOString();
-        query = query.gte('data_envio', startDate);
+      // 1) Determina a janela [start, end] do período selecionado
+      let start: string | null = null;
+      let end: string | null = null;
+      if (useCustomRange && reportStartDate && reportEndDate) {
+        start = new Date(`${reportStartDate}T00:00:00`).toISOString();
+        end = new Date(`${reportEndDate}T23:59:59`).toISOString();
+      } else if (reportDays > 0) {
+        start = new Date(Date.now() - reportDays * 24 * 60 * 60 * 1000).toISOString();
+        end = new Date().toISOString();
       } else if (reportYear !== -1) {
         if (reportMonth !== -1) {
-          const startDate = new Date(reportYear, reportMonth, 1).toISOString();
-          const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59).toISOString();
-          query = query.gte('data_envio', startDate).lte('data_envio', endDate);
+          start = new Date(reportYear, reportMonth, 1).toISOString();
+          end = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59).toISOString();
         } else {
-          const startDate = new Date(reportYear, 0, 1).toISOString();
-          const endDate = new Date(reportYear, 11, 31, 23, 59, 59).toISOString();
-          query = query.gte('data_envio', startDate).lte('data_envio', endDate);
+          start = new Date(reportYear, 0, 1).toISOString();
+          end = new Date(reportYear, 11, 31, 23, 59, 59).toISOString();
         }
       }
 
-      if (reportUserId !== 'all') {
-        query = query.eq('usuario_id', reportUserId);
-      }
-      
-      if (reportTarefaId !== 'all') {
-        query = query.eq('tarefa_id', reportTarefaId);
-      }
+      const SELECT = 'id, usuario_id, tarefa_id, status, data_envio, motivo_rejeicao, usuarios(nome, avatar), tipos_tarefas(nome, pontos)';
+      const applyFilters = (q: any) => {
+        if (reportUserId !== 'all') q = q.eq('usuario_id', reportUserId);
+        if (reportTarefaId !== 'all') q = q.eq('tarefa_id', reportTarefaId);
+        if (reportStatus !== 'all') q = q.eq('status', reportStatus);
+        return q;
+      };
+
+      let query = supabase.from('submissoes').select(SELECT);
+      if (start) query = query.gte('data_envio', start);
+      if (end) query = query.lte('data_envio', end);
+      query = applyFilters(query);
 
       const { data, error } = await query;
       if (error) throw error;
       setReportData(data || []);
+
+      // 2) Período ANTERIOR de mesma duração (para os deltas) — best-effort
+      try {
+        if (start && end) {
+          const s = new Date(start).getTime();
+          const e = new Date(end).getTime();
+          const dur = Math.max(e - s, 0);
+          const prevStart = new Date(s - dur - 1000).toISOString();
+          const prevEnd = new Date(s - 1000).toISOString();
+          let pq = supabase.from('submissoes')
+            .select('id, usuario_id, status, tipos_tarefas(pontos)')
+            .gte('data_envio', prevStart).lte('data_envio', prevEnd);
+          pq = applyFilters(pq);
+          const { data: pdata } = await pq;
+          setPrevReportData(pdata || []);
+        } else {
+          setPrevReportData([]);
+        }
+      } catch { setPrevReportData([]); }
     } catch (error) {
       console.error("Error fetching report data:", error);
       showNotification("Erro ao carregar relatórios", "error");
@@ -390,11 +538,37 @@ export default function App() {
     }
   };
 
+  const exportReportCsv = () => {
+    const header = ['Usuário', 'Missão', 'Status', 'Pontos', 'Data de envio', 'Motivo (rejeição)'];
+    const lines = (reportData || []).map((d: any) => [
+      d.usuarios?.nome || '',
+      d.tipos_tarefas?.nome || '',
+      d.status || '',
+      String(d.tipos_tarefas?.pontos ?? ''),
+      d.data_envio ? new Date(d.data_envio).toLocaleString('pt-BR') : '',
+      d.status === 'rejeitado' ? (d.motivo_rejeicao || '') : '',
+    ]);
+    const esc = (c: any) => `"${String(c).replace(/"/g, '""')}"`;
+    const csv = [header, ...lines].map(r => r.map(esc).join(';')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-deepnight-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     if (activeTab === 'relatorios' && currentUser?.cargo === 'admin') {
       fetchReportData();
     }
-  }, [activeTab, reportMonth, reportYear, reportUserId, reportTarefaId, reportDays]);
+  }, [activeTab, reportMonth, reportYear, reportUserId, reportTarefaId, reportDays, reportStatus, useCustomRange, reportStartDate, reportEndDate]);
+
+  const reportStats = useMemo(
+    () => computeReportStats(reportData, prevReportData, users, tarefas),
+    [reportData, prevReportData, users, tarefas],
+  );
 
   const fetchAllData = async (forceRefresh = true, fetchOlder = loadOlder) => {
     // Cache Check
@@ -3015,79 +3189,102 @@ export default function App() {
         {/* RELATORIOS TAB */}
         {activeTab === 'relatorios' && currentUser?.cargo === 'admin' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div className="mb-8">
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                <BarChart3 className="w-8 h-8 text-[#EA1D2C]" /> Relatórios e Métricas
-              </h1>
-              <p className="text-gray-500 mt-2">Acompanhe o engajamento da equipe e o status das missões.</p>
+            <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                  <BarChart3 className="w-8 h-8 text-[#EA1D2C]" /> Relatórios e Métricas
+                </h1>
+                <p className="text-gray-500 mt-2">Acompanhe o engajamento da equipe e o status das missões.</p>
+              </div>
+              <button onClick={exportReportCsv} disabled={reportData.length === 0}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold text-sm hover:border-[#EA1D2C]/40 hover:text-[#EA1D2C] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+                <Download className="w-4 h-4" /> Exportar CSV
+              </button>
             </div>
 
             {/* Período rápido */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">Período:</span>
-              {[{ d: 7, l: 'Últimos 7 dias' }, { d: 30, l: '30 dias' }, { d: 90, l: '90 dias' }, { d: 0, l: 'Por mês/ano' }].map(opt => (
+              {[{ d: 7, l: '7 dias' }, { d: 30, l: '30 dias' }, { d: 90, l: '90 dias' }, { d: 0, l: 'Por mês/ano' }].map(opt => (
                 <button
                   key={opt.d}
-                  onClick={() => setReportDays(opt.d)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${reportDays === opt.d ? 'bg-[#EA1D2C] text-white shadow-md shadow-[#EA1D2C]/20' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                  onClick={() => { setReportDays(opt.d); setUseCustomRange(false); }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${(!useCustomRange && reportDays === opt.d) ? 'bg-[#EA1D2C] text-white shadow-md shadow-[#EA1D2C]/20' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
                 >
                   {opt.l}
                 </button>
               ))}
+              <button
+                onClick={() => setUseCustomRange(v => !v)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${useCustomRange ? 'bg-[#EA1D2C] text-white shadow-md shadow-[#EA1D2C]/20' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+              >
+                <Calendar className="w-3.5 h-3.5" /> Personalizado
+              </button>
             </div>
+
+            {/* Intervalo de datas personalizado */}
+            {useCustomRange && (
+              <div className="bg-white/80 backdrop-blur-xl p-5 rounded-[2rem] border border-gray-200 shadow-sm flex flex-wrap gap-4 items-end">
+                <div className="flex-1 min-w-[160px]">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">De</label>
+                  <input type="date" value={reportStartDate} max={reportEndDate || undefined} onChange={e => setReportStartDate(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors" />
+                </div>
+                <div className="flex-1 min-w-[160px]">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Até</label>
+                  <input type="date" value={reportEndDate} min={reportStartDate || undefined} onChange={e => setReportEndDate(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors" />
+                </div>
+                {(!reportStartDate || !reportEndDate) && (
+                  <p className="text-xs text-gray-400 font-medium self-center">Selecione as duas datas para filtrar.</p>
+                )}
+              </div>
+            )}
 
             {/* Filters */}
             <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm flex flex-wrap gap-4 items-end">
-              <div className={`flex-1 min-w-[200px] ${reportDays > 0 ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div className={`flex-1 min-w-[150px] ${(reportDays > 0 || useCustomRange) ? 'opacity-40 pointer-events-none' : ''}`}>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Mês</label>
-                <select 
-                  value={reportMonth} 
-                  onChange={(e) => setReportMonth(Number(e.target.value))}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
-                >
+                <select value={reportMonth} onChange={(e) => setReportMonth(Number(e.target.value))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors">
                   <option value={-1}>Todos os Meses</option>
                   {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
                     <option key={i} value={i}>{m}</option>
                   ))}
                 </select>
               </div>
-              <div className={`flex-1 min-w-[150px] ${reportDays > 0 ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div className={`flex-1 min-w-[110px] ${(reportDays > 0 || useCustomRange) ? 'opacity-40 pointer-events-none' : ''}`}>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Ano</label>
-                <select 
-                  value={reportYear} 
-                  onChange={(e) => setReportYear(Number(e.target.value))}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
-                >
+                <select value={reportYear} onChange={(e) => setReportYear(Number(e.target.value))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors">
                   <option value={-1}>Todos os Anos</option>
-                  {[2024, 2025, 2026, 2027, 2028].map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
+                  {[2024, 2025, 2026, 2027, 2028].map(y => (<option key={y} value={y}>{y}</option>))}
                 </select>
               </div>
-              <div className="flex-1 min-w-[200px]">
+              <div className="flex-1 min-w-[160px]">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Usuário</label>
-                <select 
-                  value={reportUserId} 
-                  onChange={(e) => setReportUserId(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
-                >
+                <select value={reportUserId} onChange={(e) => setReportUserId(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors">
                   <option value="all">Toda a Equipe</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.nome}</option>
-                  ))}
+                  {users.map(u => (<option key={u.id} value={u.id}>{u.nome}</option>))}
                 </select>
               </div>
-              <div className="flex-1 min-w-[200px]">
+              <div className="flex-1 min-w-[160px]">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Missão</label>
-                <select 
-                  value={reportTarefaId} 
-                  onChange={(e) => setReportTarefaId(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors"
-                >
+                <select value={reportTarefaId} onChange={(e) => setReportTarefaId(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors">
                   <option value="all">Todas as Missões</option>
-                  {tarefas.map(t => (
-                    <option key={t.id} value={t.id}>{t.nome}</option>
-                  ))}
+                  {tarefas.map(t => (<option key={t.id} value={t.id}>{t.nome}</option>))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[130px]">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Status</label>
+                <select value={reportStatus} onChange={(e) => setReportStatus(e.target.value as any)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-[#EA1D2C]/50 transition-colors">
+                  <option value="all">Todos</option>
+                  <option value="aprovado">Aprovadas</option>
+                  <option value="pendente">Pendentes</option>
+                  <option value="rejeitado">Rejeitadas</option>
                 </select>
               </div>
             </div>
@@ -3098,28 +3295,28 @@ export default function App() {
               </div>
             ) : (
               <>
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Total de Missões</p>
-                    <p className="text-3xl font-black text-gray-900">{reportData.length}</p>
-                  </div>
-                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Aprovadas</p>
-                    <p className="text-3xl font-black text-emerald-600">{reportData.filter(d => d.status === 'aprovado').length}</p>
-                  </div>
-                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Rejeitadas</p>
-                    <p className="text-3xl font-black text-red-600">{reportData.filter(d => d.status === 'rejeitado').length}</p>
-                  </div>
-                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-gray-200 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#EA1D2C]/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Pontos Distribuídos</p>
-                    <p className="text-3xl font-black text-[#EA1D2C]">{formatPoints(reportData.filter(d => d.status === 'aprovado').reduce((acc, curr) => acc + (curr.tipos_tarefas?.pontos || 0), 0))}</p>
-                  </div>
+                {/* KPI Cards (com variação vs. período anterior) */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total de Missões', value: reportStats.total, color: 'text-gray-900', glow: 'bg-gray-50', delta: <DeltaBadge value={reportStats.deltas.total} /> },
+                    { label: 'Aprovadas', value: reportStats.aprovadas, color: 'text-emerald-600', glow: 'bg-emerald-500/10' },
+                    { label: 'Rejeitadas', value: reportStats.rejeitadas, color: 'text-red-600', glow: 'bg-red-500/10' },
+                    { label: 'Pendentes', value: reportStats.pendentes, color: 'text-amber-500', glow: 'bg-amber-500/10' },
+                    { label: 'Pontos Distribuídos', value: formatPoints(reportStats.pontos), color: 'text-[#EA1D2C]', glow: 'bg-[#EA1D2C]/10', delta: <DeltaBadge value={reportStats.deltas.pontos} /> },
+                    { label: 'Taxa de Aprovação', value: `${reportStats.taxaAprov}%`, color: reportStats.taxaAprov >= 70 ? 'text-emerald-600' : 'text-[#EA1D2C]', glow: 'bg-emerald-500/10', delta: <DeltaBadge value={reportStats.deltas.taxa} unit="pp" /> },
+                    { label: 'Engajamento', value: `${reportStats.engajamento}%`, sub: `${reportStats.ativosCount}/${reportStats.membros} ativos`, color: 'text-gray-900', glow: 'bg-sky-500/10', delta: <DeltaBadge value={reportStats.deltas.ativos} /> },
+                    { label: 'Média pts/aprovada', value: formatPoints(reportStats.avgPts), color: 'text-gray-900', glow: 'bg-violet-500/10' },
+                  ].map((kpi: any, i: number) => (
+                    <div key={i} className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl border border-gray-200 relative overflow-hidden">
+                      <div className={`absolute top-0 right-0 w-24 h-24 ${kpi.glow} rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none`}></div>
+                      <p className="text-xs text-gray-500 font-medium mb-1">{kpi.label}</p>
+                      <div className="flex items-end justify-between gap-2">
+                        <p className={`text-2xl md:text-3xl font-black ${kpi.color}`}>{kpi.value}</p>
+                        {reportStats.deltas.hasPrev && kpi.delta}
+                      </div>
+                      {kpi.sub && <p className="text-[11px] text-gray-400 font-medium mt-1">{kpi.sub}</p>}
+                    </div>
+                  ))}
                 </div>
 
                 {/* Charts */}
@@ -3262,6 +3459,180 @@ export default function App() {
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Evolução no período */}
+                <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                  <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Activity className="w-5 h-5 text-[#EA1D2C]" /> Evolução no período</h3>
+                  <p className="text-sm text-gray-500 mb-6">Envios e pontos distribuídos ao longo do tempo.</p>
+                  <div className="h-[300px] w-full">
+                    {reportStats.timeSeries.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={reportStats.timeSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="gEnvios" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#EA1D2C" stopOpacity={0.35} />
+                              <stop offset="95%" stopColor="#EA1D2C" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="gPontos" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#00000010" vertical={false} />
+                          <XAxis dataKey="label" stroke="#00000050" fontSize={11} tickLine={false} axisLine={false} minTickGap={16} />
+                          <YAxis stroke="#00000050" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', color: '#111827' }} />
+                          <Legend />
+                          <Area type="monotone" dataKey="envios" name="Envios" stroke="#EA1D2C" strokeWidth={2} fill="url(#gEnvios)" />
+                          <Area type="monotone" dataKey="pontos" name="Pontos" stroke="#3B82F6" strokeWidth={2} fill="url(#gPontos)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-gray-500">Nenhum dado para exibir.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Atividade por dia da semana */}
+                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2"><Calendar className="w-5 h-5 text-[#EA1D2C]" /> Atividade por dia da semana</h3>
+                    <div className="h-[260px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={reportStats.byWeekday} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#00000010" vertical={false} />
+                          <XAxis dataKey="name" stroke="#00000050" fontSize={12} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#00000050" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                          <Tooltip cursor={{ fill: '#00000005' }} contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', color: '#111827' }} />
+                          <Bar dataKey="envios" name="Envios" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Motivos de rejeição */}
+                  <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><XCircle className="w-5 h-5 text-red-500" /> Motivos de rejeição</h3>
+                    <p className="text-sm text-gray-500 mb-6">O que mais reprova entregas no período.</p>
+                    {reportStats.rejectionReasons.length === 0 ? (
+                      <div className="h-[220px] flex items-center justify-center text-emerald-600 font-medium text-sm">Nenhuma rejeição no período 🎉</div>
+                    ) : (
+                      <div className="flex flex-col gap-3 max-h-[240px] overflow-y-auto pr-1">
+                        {reportStats.rejectionReasons.slice(0, 8).map((r: any, i: number) => {
+                          const max = reportStats.rejectionReasons[0].count || 1;
+                          return (
+                            <div key={i}>
+                              <div className="flex items-center justify-between text-sm mb-1">
+                                <span className="text-gray-700 font-medium truncate pr-2" title={r.motivo}>{r.motivo}</span>
+                                <span className="text-gray-900 font-bold shrink-0">{r.count}</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                                <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.round((r.count / max) * 100)}%` }}></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Ranking de performance da equipe */}
+                <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Award className="w-5 h-5 text-[#EA1D2C]" /> Ranking de performance</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Ordenar por</span>
+                      {[{ k: 'pontos', l: 'Pontos' }, { k: 'aprov', l: 'Aprovadas' }, { k: 'total', l: 'Envios' }, { k: 'taxa', l: 'Taxa' }].map(o => (
+                        <button key={o.k} onClick={() => setUserSortBy(o.k as any)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${userSortBy === o.k ? 'bg-[#EA1D2C] text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>{o.l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {reportStats.byUser.length === 0 ? (
+                    <p className="text-gray-500 text-sm py-8 text-center">Nenhum dado para exibir.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                            <th className="py-2 pr-3 font-bold">#</th>
+                            <th className="py-2 pr-3 font-bold">Membro</th>
+                            <th className="py-2 px-3 font-bold text-center">Envios</th>
+                            <th className="py-2 px-3 font-bold text-center">Aprov.</th>
+                            <th className="py-2 px-3 font-bold text-center">Rejeit.</th>
+                            <th className="py-2 px-3 font-bold text-center">Pend.</th>
+                            <th className="py-2 px-3 font-bold text-center">Taxa</th>
+                            <th className="py-2 pl-3 font-bold text-right">Pontos</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...reportStats.byUser].sort((a: any, b: any) => (b[userSortBy] ?? 0) - (a[userSortBy] ?? 0)).slice(0, 30).map((u: any, i: number) => (
+                            <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                              <td className="py-2.5 pr-3 font-bold text-gray-400">{i + 1}</td>
+                              <td className="py-2.5 pr-3">
+                                <div className="flex items-center gap-2.5">
+                                  {u.avatar ? <img src={u.avatar} alt="" className="w-7 h-7 rounded-full object-cover border border-gray-200" /> : <div className="w-7 h-7 rounded-full bg-[#EA1D2C]/10 flex items-center justify-center text-[11px] font-black text-[#EA1D2C]">{(u.nome || '?').charAt(0).toUpperCase()}</div>}
+                                  <span className="font-bold text-gray-900 truncate max-w-[160px]">{u.nome}</span>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-gray-700 font-medium">{u.total}</td>
+                              <td className="py-2.5 px-3 text-center text-emerald-600 font-bold">{u.aprov}</td>
+                              <td className="py-2.5 px-3 text-center text-red-500 font-medium">{u.rej}</td>
+                              <td className="py-2.5 px-3 text-center text-amber-500 font-medium">{u.pend}</td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`font-bold ${u.taxa >= 70 ? 'text-emerald-600' : u.taxa >= 40 ? 'text-amber-500' : 'text-red-500'}`}>{(u.aprov + u.rej) > 0 ? `${u.taxa}%` : '—'}</span>
+                              </td>
+                              <td className="py-2.5 pl-3 text-right font-black text-[#EA1D2C]">{formatPoints(u.pontos)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desempenho por missão */}
+                <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-200 shadow-sm">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-[#EA1D2C]" /> Desempenho por missão</h3>
+                  {reportStats.byMission.length === 0 ? (
+                    <p className="text-gray-500 text-sm py-8 text-center">Nenhum dado para exibir.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                            <th className="py-2 pr-3 font-bold">Missão</th>
+                            <th className="py-2 px-3 font-bold text-center">Envios</th>
+                            <th className="py-2 px-3 font-bold text-center">Aprov.</th>
+                            <th className="py-2 px-3 font-bold text-center">Rejeit.</th>
+                            <th className="py-2 px-3 font-bold text-center">Taxa aprov.</th>
+                            <th className="py-2 pl-3 font-bold text-right">Pontos</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportStats.byMission.slice(0, 30).map((m: any, i: number) => (
+                            <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                              <td className="py-2.5 pr-3 font-bold text-gray-900 truncate max-w-[220px]" title={m.nome}>{m.nome}</td>
+                              <td className="py-2.5 px-3 text-center text-gray-700 font-medium">{m.total}</td>
+                              <td className="py-2.5 px-3 text-center text-emerald-600 font-bold">{m.aprov}</td>
+                              <td className="py-2.5 px-3 text-center text-red-500 font-medium">{m.rej}</td>
+                              <td className="py-2.5 px-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-16 h-1.5 rounded-full bg-gray-100 overflow-hidden hidden sm:block">
+                                    <div className={`h-full rounded-full ${m.taxa >= 70 ? 'bg-emerald-400' : m.taxa >= 40 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${m.taxa}%` }}></div>
+                                  </div>
+                                  <span className={`font-bold ${m.taxa >= 70 ? 'text-emerald-600' : m.taxa >= 40 ? 'text-amber-500' : 'text-red-500'}`}>{(m.aprov + m.rej) > 0 ? `${m.taxa}%` : '—'}</span>
+                                </div>
+                              </td>
+                              <td className="py-2.5 pl-3 text-right font-black text-[#EA1D2C]">{formatPoints(m.pontos)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
 
                 {/* ═══ INSIGHTS & CAMPANHAS ═══ */}
