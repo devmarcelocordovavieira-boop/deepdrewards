@@ -244,7 +244,10 @@ export default function App() {
       // INITIAL_SESSION is handled by checkUser() above to avoid double-call.
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-          fetchUserData(session.user.id);
+          // Defer para FORA do lock de auth (navigator.locks): chamar supabase
+          // aqui dentro trava e causa loading infinito "depois de alguns logins".
+          const uid = session.user.id;
+          setTimeout(() => fetchUserData(uid), 0);
         }
       }
     });
